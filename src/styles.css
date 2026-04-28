@@ -1,0 +1,196 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: #f5f6f8;
+  color: #222;
+}
+
+a {
+  color: #1f5fbf;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  background-color: #ffffff;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+button:hover {
+  background-color: #f3f3f3;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* Primary Button (Speichern) */
+button[type="submit"] {
+  background-color: #1f5fbf;
+  color: white;
+  border-color: #1f5fbf;
+  font-weight: 500;
+}
+
+button[type="submit"]:hover {
+  background-color: #174a96;
+}
+
+/* Secondary Button (Abbrechen) */
+button.secondary {
+  background-color: #f7f7f7;
+  color: #333;
+  border-color: #ccc;
+}
+
+button.secondary:hover {
+  background-color: #ececec;
+}
+
+input,
+select {
+  border: 1px solid #bbb;
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.95rem;
+  background-color: white;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #9bbcf0;
+  border-color: #1f5fbf;
+}
+
+main {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.member-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e5ea;
+  text-decoration: none;
+  color: inherit;
+
+  transition: all 0.15s ease;
+}
+
+.member-card:hover {
+  border-color: #1f5fbf;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.member-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e5ea;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.member-card:hover {
+  border-color: #1f5fbf;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.10);
+  transform: translateY(-2px);
+  background-color: #fcfdff;
+}
+
+.member-card:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.member-card:focus-visible {
+  outline: 3px solid #9bbcf0;
+  outline-offset: 2px;
+}
+
+.badge {
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* neutral (Ort) */
+.badge-neutral {
+  background: #eef1f4;
+  color: #555;
+}
+
+/* Stimme */
+.badge-voice {
+  background: #eef3fb;
+  color: #1f4f8f;
+}
+
+/* Aktiv */
+.badge-success {
+  background: #e6f6ea;
+  color: #1e7d3a;
+}
+
+/* Verstorben */
+.badge-danger {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+/* Nichtmitglied */
+.badge-danger {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+/* sonst */
+.badge-muted {
+  background: #f3f3f3;
+  color: #777;
+}
+
+.error-box {
+  background-color: #fde8e8;
+  color: #b42318;
+  border: 1px solid #f2c4c4;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+}
