@@ -29,7 +29,7 @@ export default function MemberContactForm({ kontakt, onSave, onCancel }) {
       <FormField label="Adresszusatz" name="adresszusatz" value={formData.adresszusatz} onChange={handleChange} />
       <FormField label="Briefanrede" name="briefanrede" value={formData.briefanrede} onChange={handleChange} />
 
-      <div className="form-actions">
+      <div className="form-actions">  
         <button type="submit">Speichern</button>
         <button type="button" className="secondary" onClick={onCancel}>
           Abbrechen

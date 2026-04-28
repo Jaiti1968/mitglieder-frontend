@@ -197,14 +197,21 @@ function Field({ label, value }) {
   return (
     <div style={fieldStyle}>
       <strong>{label}</strong>
-      <span style={{ color: value ? "inherit" : "#999" }}>{value || "—"}</span>
+      <span
+        style={{
+          color: value ? "inherit" : "#999",
+          overflowWrap: "anywhere",
+        }}
+      >
+        {value || "—"}
+      </span>
     </div>
   );
 }
 
 const fieldStyle = {
   display: "grid",
-  gridTemplateColumns: "180px 1fr",
+  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
   gap: "1rem",
   padding: "0.55rem 0",
   borderBottom: "1px solid #edf0f3",

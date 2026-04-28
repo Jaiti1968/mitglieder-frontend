@@ -233,3 +233,13 @@ form {
     flex: 1;
   }
 }
+
+@media (max-width: 700px) {
+  main {
+    padding-bottom: 6rem;
+  }
+
+  form {
+    padding-bottom: 6rem;
+  }
+}
