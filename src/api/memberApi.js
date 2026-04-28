@@ -4,17 +4,25 @@ export function getMembers({
   page = 1,
   pageSize = 20,
   search = "",
-  statusId = "",
-  stimmeId = "",
+  statusIds = [],
+  stimmeIds = [],
 } = {}) {
   const params = new URLSearchParams();
 
   params.set("page", page);
   params.set("pageSize", pageSize);
 
-  if (search) params.set("search", search);
-  if (statusId) params.set("statusId", statusId);
-  if (stimmeId) params.set("stimmeId", stimmeId);
+  if (search) {
+    params.set("search", search);
+  }
+
+  statusIds.forEach((id) => {
+    params.append("statusId", id);
+  });
+
+  stimmeIds.forEach((id) => {
+    params.append("stimmeId", id);
+  });
 
   return apiGet(`/api/members?${params.toString()}`);
 }
@@ -32,5 +40,8 @@ export function updateKontakt(mitgliedsnummer, kontakt) {
 }
 
 export function updateMitgliedschaft(mitgliedsnummer, mitgliedschaft) {
-  return apiPut(`/api/members/${mitgliedsnummer}/mitgliedschaft`, mitgliedschaft);
+  return apiPut(
+    `/api/members/${mitgliedsnummer}/mitgliedschaft`,
+    mitgliedschaft
+  );
 }

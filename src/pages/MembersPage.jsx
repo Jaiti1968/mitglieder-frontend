@@ -10,23 +10,49 @@ export default function MembersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const search = searchParams.get("search") || "";
-  const statusId = searchParams.get("statusId") || "";
-  const stimmeId = searchParams.get("stimmeId") || "";
+  const statusIds = searchParams.getAll("statusId");
+  const stimmeIds = searchParams.getAll("stimmeId");
   const page = Number(searchParams.get("page") || 1);
 
   const searchIsValid = search.length === 0 || search.length >= 3;
+  const hasActiveFilters =
+    search.length > 0 || statusIds.length > 0 || stimmeIds.length > 0;
 
-  function setParam(key, value) {
+  function setSearch(value) {
     const params = new URLSearchParams(searchParams);
 
     if (value) {
-      params.set(key, value);
+      params.set("search", value);
     } else {
-      params.delete(key);
+      params.delete("search");
     }
 
     params.set("page", "1");
     setSearchParams(params);
+  }
+
+  function toggleParam(key, value) {
+    const params = new URLSearchParams(searchParams);
+    const currentValues = params.getAll(key);
+    const valueAsString = String(value);
+
+    params.delete(key);
+
+    if (currentValues.includes(valueAsString)) {
+      currentValues
+        .filter((currentValue) => currentValue !== valueAsString)
+        .forEach((currentValue) => params.append(key, currentValue));
+    } else {
+      currentValues.forEach((currentValue) => params.append(key, currentValue));
+      params.append(key, valueAsString);
+    }
+
+    params.set("page", "1");
+    setSearchParams(params);
+  }
+
+  function resetFilters() {
+    setSearchParams({});
   }
 
   function setPage(newPage) {
@@ -41,14 +67,14 @@ export default function MembersPage() {
     isError,
     error,
   } = useQuery({
-    queryKey: ["members", search, statusId, stimmeId, page],
+    queryKey: ["members", search, statusIds, stimmeIds, page],
     queryFn: () =>
       getMembers({
         page,
         pageSize: PAGE_SIZE,
         search,
-        statusId,
-        stimmeId,
+        statusIds,
+        stimmeIds,
       }),
     enabled: searchIsValid,
   });
@@ -63,7 +89,7 @@ export default function MembersPage() {
     queryFn: getVoices,
   });
 
-  const members = membersData?.items ?? membersData ?? [];
+  const members = membersData?.items ?? [];
   const pagination = membersData?.pagination;
 
   return (
@@ -71,37 +97,57 @@ export default function MembersPage() {
       <h1 style={{ marginBottom: "1rem" }}>Mitglieder</h1>
 
       <section style={cardStyle}>
-        <div style={filterGrid}>
+        <div style={filterTopRowStyle}>
           <input
             placeholder="Suche..."
             value={search}
-            onChange={(e) => setParam("search", e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
+            style={{ width: "100%" }}
           />
 
-          <select
-            value={statusId}
-            onChange={(e) => setParam("statusId", e.target.value)}
+          <button
+            type="button"
+            className="secondary"
+            onClick={resetFilters}
+            disabled={!hasActiveFilters}
           >
-            <option value="">Alle Status</option>
-            {statuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={stimmeId}
-            onChange={(e) => setParam("stimmeId", e.target.value)}
-          >
-            <option value="">Alle Stimmen</option>
-            {voices.map((voice) => (
-              <option key={voice.id} value={voice.id}>
-                {voice.label}
-              </option>
-            ))}
-          </select>
+            Filter zurücksetzen
+          </button>
         </div>
+
+        <FilterGroup title="Status">
+          {statuses.map((status) => (
+            <FilterChip
+              key={status.id}
+              active={statusIds.includes(String(status.id))}
+              onClick={() => toggleParam("statusId", status.id)}
+            >
+              {status.label}
+            </FilterChip>
+          ))}
+        </FilterGroup>
+
+        <FilterGroup title="Stimme">
+          {voices.map((voice) => (
+            <FilterChip
+              key={voice.id}
+              active={stimmeIds.includes(String(voice.id))}
+              onClick={() => toggleParam("stimmeId", voice.id)}
+            >
+              {voice.label}
+            </FilterChip>
+          ))}
+        </FilterGroup>
+
+        {hasActiveFilters && (
+          <ActiveFilterSummary
+            search={search}
+            statusIds={statusIds}
+            stimmeIds={stimmeIds}
+            statuses={statuses}
+            voices={voices}
+          />
+        )}
       </section>
 
       <ResultInfo
@@ -167,9 +213,57 @@ export default function MembersPage() {
   );
 }
 
+function FilterGroup({ title, children }) {
+  return (
+    <div style={{ marginTop: "1rem" }}>
+      <strong>{title}</strong>
+      <div style={chipContainerStyle}>{children}</div>
+    </div>
+  );
+}
+
+function FilterChip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={active ? activeChipStyle : chipStyle}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ActiveFilterSummary({ search, statusIds, stimmeIds, statuses, voices }) {
+  const selectedStatuses = getSelectedLabels(statusIds, statuses);
+  const selectedVoices = getSelectedLabels(stimmeIds, voices);
+
+  return (
+    <div style={activeFilterSummaryStyle}>
+      <strong>Aktive Filter:</strong>
+
+      {search && <span>Suche: „{search}“</span>}
+
+      {selectedStatuses.length > 0 && (
+        <span>Status: {selectedStatuses.join(", ")}</span>
+      )}
+
+      {selectedVoices.length > 0 && (
+        <span>Stimme: {selectedVoices.join(", ")}</span>
+      )}
+    </div>
+  );
+}
+
+function getSelectedLabels(selectedIds, options) {
+  return selectedIds
+    .map((id) => options.find((option) => String(option.id) === String(id)))
+    .filter(Boolean)
+    .map((option) => option.label);
+}
+
 function ResultInfo({ pagination, isFetching, isError }) {
-  if (isError) return null;
-  if (!pagination) return null;
+  if (isError || !pagination) return null;
 
   return (
     <div style={resultInfoStyle}>
@@ -293,10 +387,40 @@ const cardStyle = {
   boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
 };
 
-const filterGrid = {
+const filterTopRowStyle = {
   display: "grid",
-  gridTemplateColumns: "2fr 1fr 1fr",
+  gridTemplateColumns: "1fr auto",
   gap: "1rem",
+  alignItems: "center",
+};
+
+const chipContainerStyle = {
+  display: "flex",
+  gap: "0.5rem",
+  flexWrap: "wrap",
+  marginTop: "0.5rem",
+};
+
+const chipStyle = {
+  borderRadius: "999px",
+  padding: "0.4rem 0.75rem",
+};
+
+const activeChipStyle = {
+  ...chipStyle,
+  backgroundColor: "#1f5fbf",
+  color: "#fff",
+  borderColor: "#1f5fbf",
+};
+
+const activeFilterSummaryStyle = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "0.75rem",
+  marginTop: "1rem",
+  paddingTop: "1rem",
+  borderTop: "1px solid #edf0f3",
+  color: "#555",
 };
 
 const resultInfoStyle = {
