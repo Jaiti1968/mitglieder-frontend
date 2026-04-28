@@ -60,6 +60,9 @@ export default function MemberFilterPanel({
           stimmeIds={stimmeIds}
           statuses={statuses}
           voices={voices}
+          onRemoveSearch={() => onSearchChange("")}
+          onRemoveStatus={(id) => onToggleFilter("statusId", id)}
+          onRemoveVoice={(id) => onToggleFilter("stimmeId", id)}
         />
       )}
     </section>
@@ -87,32 +90,70 @@ function FilterChip({ active, onClick, children }) {
   );
 }
 
-function ActiveFilterSummary({ search, statusIds, stimmeIds, statuses, voices }) {
-  const selectedStatuses = getSelectedLabels(statusIds, statuses);
-  const selectedVoices = getSelectedLabels(stimmeIds, voices);
+function ActiveFilterSummary({
+  search,
+  statusIds,
+  stimmeIds,
+  statuses,
+  voices,
+  onRemoveSearch,
+  onRemoveStatus,
+  onRemoveVoice,
+}) {
+  const selectedStatuses = getSelectedOptions(statusIds, statuses);
+  const selectedVoices = getSelectedOptions(stimmeIds, voices);
 
   return (
     <div style={activeFilterSummaryStyle}>
       <strong>Aktive Filter:</strong>
 
-      {search && <span>Suche: „{search}“</span>}
-
-      {selectedStatuses.length > 0 && (
-        <span>Status: {selectedStatuses.join(", ")}</span>
+      {search && (
+        <RemovableFilterChip onRemove={onRemoveSearch}>
+          Suche: „{search}“
+        </RemovableFilterChip>
       )}
 
-      {selectedVoices.length > 0 && (
-        <span>Stimme: {selectedVoices.join(", ")}</span>
-      )}
+      {selectedStatuses.map((status) => (
+        <RemovableFilterChip
+          key={`status-${status.id}`}
+          onRemove={() => onRemoveStatus(status.id)}
+        >
+          Status: {status.label}
+        </RemovableFilterChip>
+      ))}
+
+      {selectedVoices.map((voice) => (
+        <RemovableFilterChip
+          key={`voice-${voice.id}`}
+          onRemove={() => onRemoveVoice(voice.id)}
+        >
+          Stimme: {voice.label}
+        </RemovableFilterChip>
+      ))}
     </div>
   );
 }
 
-function getSelectedLabels(selectedIds, options) {
+function RemovableFilterChip({ children, onRemove }) {
+  return (
+    <span style={removableChipStyle}>
+      <span>{children}</span>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Filter entfernen"
+        style={removeButtonStyle}
+      >
+        ×
+      </button>
+    </span>
+  );
+}
+
+function getSelectedOptions(selectedIds, options) {
   return selectedIds
     .map((id) => options.find((option) => String(option.id) === String(id)))
-    .filter(Boolean)
-    .map((option) => option.label);
+    .filter(Boolean);
 }
 
 const cardStyle = {
@@ -152,9 +193,34 @@ const activeChipStyle = {
 const activeFilterSummaryStyle = {
   display: "flex",
   flexWrap: "wrap",
-  gap: "0.75rem",
+  alignItems: "center",
+  gap: "0.5rem",
   marginTop: "1rem",
   paddingTop: "1rem",
   borderTop: "1px solid #edf0f3",
   color: "#555",
+};
+
+const removableChipStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  backgroundColor: "#eef3fb",
+  color: "#1f4f8f",
+  borderRadius: "999px",
+  padding: "0.25rem 0.35rem 0.25rem 0.6rem",
+  fontSize: "0.85rem",
+  fontWeight: 600,
+};
+
+const removeButtonStyle = {
+  width: "1.4rem",
+  height: "1.4rem",
+  borderRadius: "999px",
+  padding: 0,
+  border: "none",
+  backgroundColor: "transparent",
+  color: "#1f4f8f",
+  fontWeight: 700,
+  lineHeight: 1,
 };
