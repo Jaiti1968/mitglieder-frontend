@@ -8,12 +8,12 @@ import {
   updateStammdaten,
 } from "../api/memberApi";
 import { getMemberStatuses, getVoices } from "../api/lookupApi";
-import StammdatenForm from "../components/members/StammdatenForm";
-import ContactForm from "../components/members/ContactForm";
-import MembershipForm from "../components/members/MembershipForm";
-import MemberHeader from "../components/members/MemberHeader";
-import MemberSection from "../components/members/MemberSection";
-import MemberTabs from "../components/members/MemberTabs";
+import StammdatenForm from "../components/members/details/StammdatenForm";
+import ContactForm from "../components/members/details/ContactForm";
+import MembershipForm from "../components/members/details/MembershipForm";
+import MemberHeader from "../components/members/details/MemberHeader";
+import MemberSection from "../components/members/details/MemberSection";
+import MemberTabs from "../components/members/details/MemberTabs";
 import ErrorBox from "../components/common/ErrorBox";
 
 export default function MemberDetailPage() {

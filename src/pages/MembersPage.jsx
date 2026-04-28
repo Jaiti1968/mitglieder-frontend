@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { getMembers } from "../api/memberApi";
 import { getMemberStatuses, getVoices } from "../api/lookupApi";
 import ErrorBox from "../components/common/ErrorBox";
-import Pagination from "../components/members/Pagination";
-import MemberList from "../components/members/MemberList";
-import MemberFilterPanel from "../components/members/MemberFilterPanel";
-import ResultInfo from "../components/members/ResultInfo";
+import Pagination from "../components/members/list/Pagination";
+import MemberList from "../components/members/list/MemberList";
+import MemberFilterPanel from "../components/members/list/MemberFilterPanel";
+import ResultInfo from "../components/members/list/ResultInfo";
 
 const PAGE_SIZE = 20;
 
