@@ -63,9 +63,12 @@ export default function MemberDetailPage() {
   function handleSaveSuccess() {
     queryClient.invalidateQueries({ queryKey: ["member", mitgliedsnummer] });
     queryClient.invalidateQueries({ queryKey: ["members"] });
+
+    queryClient.refetchQueries({ queryKey: ["member", mitgliedsnummer] });
+
     setEditingSection(null);
   }
-
+  
   function switchTab(tab) {
     setActiveTab(tab);
     setEditingSection(null);
