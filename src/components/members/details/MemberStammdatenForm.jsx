@@ -52,7 +52,7 @@ function FormField({ label, name, value, onChange, type = "text", required = fal
 
 const fieldStyle = {
   display: "grid",
-  gridTemplateColumns: "180px 1fr",
+  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
   alignItems: "center",
   gap: "1rem",
   marginBottom: "0.5rem",

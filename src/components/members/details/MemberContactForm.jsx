@@ -29,9 +29,11 @@ export default function MemberContactForm({ kontakt, onSave, onCancel }) {
       <FormField label="Adresszusatz" name="adresszusatz" value={formData.adresszusatz} onChange={handleChange} />
       <FormField label="Briefanrede" name="briefanrede" value={formData.briefanrede} onChange={handleChange} />
 
-      <div style={{ marginTop: "1rem", display: "flex", gap: "0.5rem" }}>
+      <div className="form-actions">
         <button type="submit">Speichern</button>
-        <button type="button" className="secondary" onClick={onCancel}>Abbrechen</button>
+        <button type="button" className="secondary" onClick={onCancel}>
+          Abbrechen
+        </button>
       </div>
     </form>
   );
@@ -39,9 +41,17 @@ export default function MemberContactForm({ kontakt, onSave, onCancel }) {
 
 function FormField({ label, name, value, onChange, type = "text" }) {
   return (
-    <label style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "1rem", marginBottom: "0.5rem" }}>
+    <label style={fieldStyle}>
       <span>{label}</span>
       <input name={name} type={type} value={value} onChange={onChange} />
     </label>
   );
 }
+
+const fieldStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
+  alignItems: "center",
+  gap: "1rem",
+  marginBottom: "0.5rem",
+};
