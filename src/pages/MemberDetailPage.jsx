@@ -8,9 +8,9 @@ import {
   updateStammdaten,
 } from "../api/memberApi";
 import { getMemberStatuses, getVoices } from "../api/lookupApi";
-import StammdatenForm from "../components/members/details/StammdatenForm";
-import ContactForm from "../components/members/details/ContactForm";
-import MembershipForm from "../components/members/details/MembershipForm";
+import MemberStammdatenForm from "../components/members/details/MemberStammdatenForm";
+import MemberContactForm from "../components/members/details/MemberContactForm";
+import MemberMembershipForm from "../components/members/details/MemberMembershipForm";
 import MemberHeader from "../components/members/details/MemberHeader";
 import MemberSection from "../components/members/details/MemberSection";
 import MemberTabs from "../components/members/details/MemberTabs";
@@ -106,7 +106,7 @@ export default function MemberDetailPage() {
           errorMessage={updateStammdatenMutation.error?.message}
           isSaving={updateStammdatenMutation.isPending}
           form={
-            <StammdatenForm
+            <MemberStammdatenForm
               stammdaten={stammdaten}
               onSave={(formData) => updateStammdatenMutation.mutate(formData)}
               onCancel={() => setEditingSection(null)}
@@ -138,7 +138,7 @@ export default function MemberDetailPage() {
           errorMessage={updateKontaktMutation.error?.message}
           isSaving={updateKontaktMutation.isPending}
           form={
-            <ContactForm
+            <MemberContactForm
               kontakt={kontakt}
               onSave={(formData) => updateKontaktMutation.mutate(formData)}
               onCancel={() => setEditingSection(null)}
@@ -165,7 +165,7 @@ export default function MemberDetailPage() {
           errorMessage={updateMitgliedschaftMutation.error?.message}
           isSaving={updateMitgliedschaftMutation.isPending}
           form={
-            <MembershipForm
+            <MemberMembershipForm
               mitgliedschaft={mitgliedschaft}
               statuses={statuses}
               voices={voices}

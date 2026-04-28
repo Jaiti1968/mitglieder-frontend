@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function ContactForm({ kontakt, onSave, onCancel }) {
+export default function MemberContactForm({ kontakt, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     telefonPrivat: kontakt.telefonPrivat ?? "",
     telefonGeschaeftlich: kontakt.telefonGeschaeftlich ?? "",

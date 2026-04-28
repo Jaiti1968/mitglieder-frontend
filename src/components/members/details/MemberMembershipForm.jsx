@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function MembershipForm({
+export default function MemberMembershipForm({
   mitgliedschaft,
   statuses,
   voices,

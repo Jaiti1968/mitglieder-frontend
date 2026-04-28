@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function StammdatenForm({ stammdaten, onSave, onCancel }) {
+export default function MemberStammdatenForm({ stammdaten, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     anrede: stammdaten?.anrede ?? "",
     akademischerTitel: stammdaten?.akademischerTitel ?? "",
