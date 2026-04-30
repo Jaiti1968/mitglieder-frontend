@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getMembers } from "../api/memberApi";
 import { getMemberStatuses, getVoices } from "../api/lookupApi";
@@ -98,7 +98,13 @@ export default function MembersPage() {
 
   return (
     <main>
-      <h1 style={{ marginBottom: "1rem" }}>Mitglieder</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <h1 style={{ margin: 0 }}>Mitglieder</h1>
+
+        <Link to="/members/new">
+          <button type="button">+ Neues Mitglied</button>
+      </Link>
+    </div>
 
       <MemberFilterPanel
         search={search}

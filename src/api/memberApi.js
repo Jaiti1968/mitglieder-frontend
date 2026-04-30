@@ -1,4 +1,4 @@
-import { apiGet, apiPut } from "./apiClient";
+import { apiGet, apiPost, apiPut } from "./apiClient";
 
 export function getMembers({
   page = 1,
@@ -29,6 +29,10 @@ export function getMembers({
 
 export function getMember(mitgliedsnummer) {
   return apiGet(`/api/members/${mitgliedsnummer}`);
+}
+
+export function createMember(member) {
+  return apiPost("/api/members", member);
 }
 
 export function updateStammdaten(mitgliedsnummer, stammdaten) {
