@@ -1,20 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const AUTO_SAVE_DELAY_MS = 500;
 
 export default function MemberMembershipForm({
   mitgliedschaft = {},
   statuses = [],
   voices = [],
   onChange,
+  onAutoSaveStart,
+  onAutoSaveSuccess,
+  onAutoSaveError,
 }) {
+  const isFirstRender = useRef(true);
+
   const [formData, setFormData] = useState({
-    mitgliedsstatusId:
-      mitgliedschaft?.mitgliedsstatusId ?? "",
+    mitgliedsstatusId: mitgliedschaft?.mitgliedsstatusId ?? "",
     stimmeId: mitgliedschaft?.stimmeId ?? "",
-    eintrittsdatum: mitgliedschaft?.eintrittsdatum ?? "",
-    austrittsdatum: mitgliedschaft?.austrittsdatum ?? "",
+    eintritt: mitgliedschaft?.eintritt ?? "",
+    austritt: mitgliedschaft?.austritt ?? "",
+    kammerchor: mitgliedschaft?.kammerchor ?? false,
   });
 
-  // 👉 Default setzen, sobald statuses da sind (aber OHNE Loop)
   const kandidatStatus = statuses.find(
     (s) => s.label?.toLowerCase() === "kandidat"
   );
@@ -24,19 +30,51 @@ export default function MemberMembershipForm({
     kandidatStatus?.id ||
     (statuses.length > 0 ? statuses[0].id : "");
 
-  // 👉 Auto-Save
   useEffect(() => {
-    onChange({
-      ...formData,
-      mitgliedsstatusId: effectiveStatusId,
-    });
-  }, [formData, effectiveStatusId, onChange]);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        onAutoSaveStart?.();
+
+        const payload = {
+          eintritt: formData.eintritt || null,
+          austritt: formData.austritt || null,
+          mitgliedsstatusId: Number(effectiveStatusId),
+          stimmeId: formData.stimmeId ? Number(formData.stimmeId) : null,
+          kammerchor: Boolean(formData.kammerchor),
+        };
+
+        const result = onChange?.(payload);
+
+        if (result instanceof Promise) {
+          await result;
+        }
+
+        onAutoSaveSuccess?.();
+      } catch (error) {
+        console.error("Auto-Save Mitgliedschaft fehlgeschlagen:", error);
+        onAutoSaveError?.();
+      }
+    }, AUTO_SAVE_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+
+    // Wichtig: onChange NICHT in Dependencies, sonst Save-Loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, effectiveStatusId]);
 
   function handleChange(event) {
-    const { name, value } = event.target;
+    const { name, value, type, checked } = event.target;
+
     setFormData((current) => ({
       ...current,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   }
 
@@ -47,9 +85,9 @@ export default function MemberMembershipForm({
         name="mitgliedsstatusId"
         value={effectiveStatusId}
         onChange={handleChange}
-        options={statuses.map((s) => ({
-          value: s.id,
-          label: s.label,
+        options={statuses.map((status) => ({
+          value: status.id,
+          label: status.label,
         }))}
       />
 
@@ -60,26 +98,33 @@ export default function MemberMembershipForm({
         onChange={handleChange}
         options={[
           { value: "", label: "—" },
-          ...voices.map((v) => ({
-            value: v.id,
-            label: v.label,
+          ...voices.map((voice) => ({
+            value: voice.id,
+            label: voice.label,
           })),
         ]}
       />
 
       <FormField
-        label="Eintrittsdatum"
-        name="eintrittsdatum"
+        label="Eintritt"
+        name="eintritt"
         type="date"
-        value={formData.eintrittsdatum}
+        value={formData.eintritt ?? ""}
         onChange={handleChange}
       />
 
       <FormField
-        label="Austrittsdatum"
-        name="austrittsdatum"
+        label="Austritt"
+        name="austritt"
         type="date"
-        value={formData.austrittsdatum}
+        value={formData.austritt ?? ""}
+        onChange={handleChange}
+      />
+
+      <CheckboxField
+        label="Kammerchor"
+        name="kammerchor"
+        checked={formData.kammerchor}
         onChange={handleChange}
       />
     </form>
@@ -92,12 +137,7 @@ function FormField({ label, name, value, onChange, type = "text" }) {
   return (
     <label style={fieldStyle}>
       <span>{label}</span>
-      <input
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-      />
+      <input name={name} type={type} value={value} onChange={onChange} />
     </label>
   );
 }
@@ -113,6 +153,21 @@ function SelectField({ label, name, value, onChange, options }) {
           </option>
         ))}
       </select>
+    </label>
+  );
+}
+
+function CheckboxField({ label, name, checked, onChange }) {
+  return (
+    <label style={fieldStyle}>
+      <span>{label}</span>
+      <input
+        name={name}
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        style={{ justifySelf: "start" }}
+      />
     </label>
   );
 }

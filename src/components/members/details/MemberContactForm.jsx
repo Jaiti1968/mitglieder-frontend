@@ -1,6 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export default function MemberContactForm({ kontakt = {}, onChange }) {
+const AUTO_SAVE_DELAY_MS = 500;
+
+export default function MemberContactForm({
+  kontakt = {},
+  onChange,
+  onAutoSaveStart,
+  onAutoSaveSuccess,
+  onAutoSaveError,
+}) {
+  const isFirstRender = useRef(true);
+
   const [formData, setFormData] = useState({
     telefonPrivat: kontakt?.telefonPrivat ?? "",
     telefonGeschaeftlich: kontakt?.telefonGeschaeftlich ?? "",
@@ -10,14 +20,43 @@ export default function MemberContactForm({ kontakt = {}, onChange }) {
     briefanrede: kontakt?.briefanrede ?? "",
   });
 
-  // 👉 Auto-Save: bei jeder Änderung an Parent melden
   useEffect(() => {
-    onChange(formData);
-  }, [formData, onChange]);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        onAutoSaveStart?.();
+
+        const result = onChange?.(formData);
+
+        if (result instanceof Promise) {
+          await result;
+        }
+
+        onAutoSaveSuccess?.();
+      } catch (error) {
+        console.error("Auto-Save Kontakt fehlgeschlagen:", error);
+        onAutoSaveError?.();
+      }
+    }, AUTO_SAVE_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+    // Wichtig: onChange NICHT in Dependencies, sonst Save-Loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]);
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setFormData((current) => ({ ...current, [name]: value }));
+
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+    }));
   }
 
   return (
@@ -68,29 +107,14 @@ export default function MemberContactForm({ kontakt = {}, onChange }) {
   );
 }
 
-/* ---------- Komponenten ---------- */
-
-function FormField({
-  label,
-  name,
-  value,
-  onChange,
-  type = "text",
-}) {
+function FormField({ label, name, value, onChange, type = "text" }) {
   return (
     <label style={fieldStyle}>
       <span>{label}</span>
-      <input
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-      />
+      <input name={name} type={type} value={value} onChange={onChange} />
     </label>
   );
 }
-
-/* ---------- Styles ---------- */
 
 const fieldStyle = {
   display: "grid",

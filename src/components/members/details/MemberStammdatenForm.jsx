@@ -1,6 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
+const AUTO_SAVE_DELAY_MS = 500;
+
+export default function MemberStammdatenForm({
+  stammdaten = {},
+  onChange,
+  onAutoSaveStart,
+  onAutoSaveSuccess,
+  onAutoSaveError,
+}) {
+  const isFirstRender = useRef(true);
   const [isFirma, setIsFirma] = useState(stammdaten?.anrede === "");
 
   const [formData, setFormData] = useState({
@@ -14,15 +23,42 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
     strasseHausNr: stammdaten?.strasseHausNr ?? "",
   });
 
-  // 👉 Auto-Save in Parent
   useEffect(() => {
-    onChange({
-      ...formData,
-      anrede: isFirma ? "" : formData.anrede,
-      akademischerTitel: isFirma ? "" : formData.akademischerTitel,
-      geburtsdatum: isFirma ? "" : formData.geburtsdatum,
-    });
-  }, [formData, isFirma, onChange]);
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        onAutoSaveStart?.();
+
+        const payload = {
+          ...formData,
+          anrede: isFirma ? "" : formData.anrede,
+          akademischerTitel: isFirma ? "" : formData.akademischerTitel,
+          geburtsdatum: isFirma ? "" : formData.geburtsdatum,
+        };
+
+        const result = onChange?.(payload);
+
+        if (result instanceof Promise) {
+          await result;
+        }
+
+        onAutoSaveSuccess?.();
+      } catch (error) {
+        console.error("Auto-Save Stammdaten fehlgeschlagen:", error);
+        onAutoSaveError?.();
+      }
+    }, AUTO_SAVE_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+    // Wichtig: onChange NICHT in Dependencies, sonst Save-Loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, isFirma]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -43,7 +79,6 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
 
   return (
     <form>
-      {/* Art Umschalter */}
       <div style={fieldStyle}>
         <span>Art</span>
 
@@ -68,7 +103,6 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
         </div>
       </div>
 
-      {/* Anrede nur bei Person */}
       {!isFirma && (
         <SelectField
           label="Anrede"
@@ -82,7 +116,6 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
         />
       )}
 
-      {/* Akademischer Titel nur bei Person */}
       {!isFirma && (
         <TitleField
           value={formData.akademischerTitel}
@@ -95,7 +128,6 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
         />
       )}
 
-      {/* Vorname → Firmenzusatz */}
       <FormField
         label={isFirma ? "Firmenname Zusatz" : "Vorname"}
         name="vorname"
@@ -103,7 +135,6 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
         onChange={handleChange}
       />
 
-      {/* Nachname → Firmenname */}
       <FormField
         label={isFirma ? "Firmenname" : "Nachname"}
         name="nachname"
@@ -112,7 +143,6 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
         required
       />
 
-      {/* Geburtsdatum nur bei Person */}
       {!isFirma && (
         <FormField
           label="Geburtsdatum"
@@ -146,8 +176,6 @@ export default function MemberStammdatenForm({ stammdaten = {}, onChange }) {
     </form>
   );
 }
-
-/* ---------- Komponenten ---------- */
 
 function FormField({
   label,
@@ -215,8 +243,6 @@ function TitleField({ value, onChange }) {
     </div>
   );
 }
-
-/* ---------- Styles ---------- */
 
 const fieldStyle = {
   display: "grid",

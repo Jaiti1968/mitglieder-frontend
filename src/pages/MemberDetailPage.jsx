@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getMember,
@@ -8,6 +8,7 @@ import {
   updateStammdaten,
 } from "../api/memberApi";
 import { getMemberStatuses, getVoices } from "../api/lookupApi";
+
 import MemberStammdatenForm from "../components/members/details/MemberStammdatenForm";
 import MemberContactForm from "../components/members/details/MemberContactForm";
 import MemberMembershipForm from "../components/members/details/MemberMembershipForm";
@@ -15,14 +16,23 @@ import MemberHeader from "../components/members/details/MemberHeader";
 import MemberSection from "../components/members/details/MemberSection";
 import MemberTabs from "../components/members/details/MemberTabs";
 import ErrorBox from "../components/common/ErrorBox";
+import UnsavedChangesDialog from "../components/common/UnsavedChangesDialog";
+
+import { useAutoSaveStatus } from "../hooks/useAutoSaveStatus";
+import { useUnsavedChanges } from "../hooks/useUnsavedChanges";
 
 export default function MemberDetailPage() {
   const { mitgliedsnummer } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("stammdaten");
-  const [editingSection, setEditingSection] = useState(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingNavigationTarget, setPendingNavigationTarget] = useState(null);
+
+  const autoSaveStatus = useAutoSaveStatus();
+  useUnsavedChanges(autoSaveStatus.hasUnsavedChanges);
 
   const {
     data: member,
@@ -44,34 +54,76 @@ export default function MemberDetailPage() {
     queryFn: getVoices,
   });
 
+  function updateMemberCache(partialData) {
+    queryClient.setQueryData(["member", mitgliedsnummer], (current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        ...partialData,
+      };
+    });
+
+    queryClient.invalidateQueries({ queryKey: ["members"] });
+  }
+
   const updateStammdatenMutation = useMutation({
     mutationFn: (stammdaten) => updateStammdaten(mitgliedsnummer, stammdaten),
-    onSuccess: handleSaveSuccess,
+    onSuccess: (_response, stammdaten) => {
+      updateMemberCache({
+        stammdaten: {
+          ...(member?.stammdaten ?? {}),
+          ...stammdaten,
+        },
+      });
+    },
   });
 
   const updateKontaktMutation = useMutation({
     mutationFn: (kontakt) => updateKontakt(mitgliedsnummer, kontakt),
-    onSuccess: handleSaveSuccess,
+    onSuccess: (_response, kontakt) => {
+      updateMemberCache({
+        kontakt: {
+          ...(member?.kontakt ?? {}),
+          ...kontakt,
+        },
+      });
+    },
   });
 
   const updateMitgliedschaftMutation = useMutation({
     mutationFn: (mitgliedschaft) =>
       updateMitgliedschaft(mitgliedsnummer, mitgliedschaft),
-    onSuccess: handleSaveSuccess,
+    onSuccess: (_response, mitgliedschaft) => {
+      updateMemberCache({
+        mitgliedschaft: {
+          ...(member?.mitgliedschaft ?? {}),
+          ...mitgliedschaft,
+        },
+      });
+    },
   });
 
-  function handleSaveSuccess() {
-    queryClient.invalidateQueries({ queryKey: ["member", mitgliedsnummer] });
-    queryClient.invalidateQueries({ queryKey: ["members"] });
+  function handleNavigate(event, target) {
+    if (!autoSaveStatus.hasUnsavedChanges) return;
 
-    queryClient.refetchQueries({ queryKey: ["member", mitgliedsnummer] });
-
-    setEditingSection(null);
+    event.preventDefault();
+    setPendingNavigationTarget(target);
+    setShowUnsavedDialog(true);
   }
-  
-  function switchTab(tab) {
-    setActiveTab(tab);
-    setEditingSection(null);
+
+  function handleStay() {
+    setShowUnsavedDialog(false);
+    setPendingNavigationTarget(null);
+  }
+
+  function handleLeave() {
+    if (pendingNavigationTarget) {
+      navigate(pendingNavigationTarget);
+    }
+
+    setShowUnsavedDialog(false);
+    setPendingNavigationTarget(null);
   }
 
   if (isLoading) return <p>Lade Mitglied...</p>;
@@ -87,11 +139,19 @@ export default function MemberDetailPage() {
   const stammdaten = member.stammdaten ?? {};
   const kontakt = member.kontakt ?? {};
   const mitgliedschaft = member.mitgliedschaft ?? {};
+  const backTarget = `/members${location.search}`;
 
   return (
     <main>
+      <UnsavedChangesDialog
+        open={showUnsavedDialog}
+        onStay={handleStay}
+        onLeave={handleLeave}
+      />
+
       <Link
-        to={`/members${location.search}`}
+        to={backTarget}
+        onClick={(event) => handleNavigate(event, backTarget)}
         style={{ display: "inline-block", marginBottom: "1rem" }}
       >
         ← Zurück zur Liste
@@ -99,72 +159,60 @@ export default function MemberDetailPage() {
 
       <MemberHeader member={member} />
 
-      <MemberTabs activeTab={activeTab} onTabChange={switchTab} />
+      <div className="autosave-status">
+        {autoSaveStatus.isSaving && <span>Speichere Änderungen...</span>}
+
+        {autoSaveStatus.hasSaveError && (
+          <ErrorBox message="Speichern fehlgeschlagen. Bitte die Seite nicht verlassen." />
+        )}
+      </div>
+
+      <MemberTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       {activeTab === "stammdaten" && (
         <MemberSection
           title="Stammdaten"
-          isEditing={editingSection === "stammdaten"}
-          onEdit={() => setEditingSection("stammdaten")}
+          isEditing={true}
           errorMessage={updateStammdatenMutation.error?.message}
           isSaving={updateStammdatenMutation.isPending}
           form={
             <MemberStammdatenForm
               stammdaten={stammdaten}
-              onSave={(formData) => updateStammdatenMutation.mutate(formData)}
-              onCancel={() => setEditingSection(null)}
+              onChange={(formData) =>
+                updateStammdatenMutation.mutateAsync(formData)
+              }
+              onAutoSaveStart={() => autoSaveStatus.markSaving("stammdaten")}
+              onAutoSaveSuccess={() => autoSaveStatus.markSaved("stammdaten")}
+              onAutoSaveError={() => autoSaveStatus.markFailed("stammdaten")}
             />
           }
-        >
-          <Field label="Anrede" value={stammdaten.anrede} />
-          <Field
-            label="Akademischer Titel"
-            value={stammdaten.akademischerTitel}
-          />
-          <Field label="Vorname" value={stammdaten.vorname} />
-          <Field label="Nachname" value={stammdaten.nachname} />
-          <Field label="Geburtsdatum" value={stammdaten.geburtsdatum} />
-          <Field
-            label="Adresse"
-            value={`${stammdaten.strasseHausNr ?? ""}, ${
-              stammdaten.plz ?? ""
-            } ${stammdaten.ort ?? ""}`}
-          />
-        </MemberSection>
+        />
       )}
 
       {activeTab === "kontakt" && (
         <MemberSection
           title="Kontakt"
-          isEditing={editingSection === "kontakt"}
-          onEdit={() => setEditingSection("kontakt")}
+          isEditing={true}
           errorMessage={updateKontaktMutation.error?.message}
           isSaving={updateKontaktMutation.isPending}
           form={
             <MemberContactForm
               kontakt={kontakt}
-              onSave={(formData) => updateKontaktMutation.mutate(formData)}
-              onCancel={() => setEditingSection(null)}
+              onChange={(formData) =>
+                updateKontaktMutation.mutateAsync(formData)
+              }
+              onAutoSaveStart={() => autoSaveStatus.markSaving("kontakt")}
+              onAutoSaveSuccess={() => autoSaveStatus.markSaved("kontakt")}
+              onAutoSaveError={() => autoSaveStatus.markFailed("kontakt")}
             />
           }
-        >
-          <Field label="Telefon privat" value={kontakt.telefonPrivat} />
-          <Field
-            label="Telefon geschäftlich"
-            value={kontakt.telefonGeschaeftlich}
-          />
-          <Field label="Mobiltelefon" value={kontakt.mobiltelefon} />
-          <Field label="E-Mail" value={kontakt.email} />
-          <Field label="Adresszusatz" value={kontakt.adresszusatz} />
-          <Field label="Briefanrede" value={kontakt.briefanrede} />
-        </MemberSection>
+        />
       )}
 
       {activeTab === "mitgliedschaft" && (
         <MemberSection
           title="Mitgliedschaft"
-          isEditing={editingSection === "mitgliedschaft"}
-          onEdit={() => setEditingSection("mitgliedschaft")}
+          isEditing={true}
           errorMessage={updateMitgliedschaftMutation.error?.message}
           isSaving={updateMitgliedschaftMutation.isPending}
           form={
@@ -172,47 +220,22 @@ export default function MemberDetailPage() {
               mitgliedschaft={mitgliedschaft}
               statuses={statuses}
               voices={voices}
-              onSave={(formData) =>
-                updateMitgliedschaftMutation.mutate(formData)
+              onChange={(formData) =>
+                updateMitgliedschaftMutation.mutateAsync(formData)
               }
-              onCancel={() => setEditingSection(null)}
+              onAutoSaveStart={() =>
+                autoSaveStatus.markSaving("mitgliedschaft")
+              }
+              onAutoSaveSuccess={() =>
+                autoSaveStatus.markSaved("mitgliedschaft")
+              }
+              onAutoSaveError={() =>
+                autoSaveStatus.markFailed("mitgliedschaft")
+              }
             />
           }
-        >
-          <Field label="Eintritt" value={mitgliedschaft.eintritt} />
-          <Field label="Austritt" value={mitgliedschaft.austritt} />
-          <Field label="Status" value={mitgliedschaft.mitgliedsstatus} />
-          <Field label="Stimme" value={mitgliedschaft.stimme} />
-          <Field
-            label="Kammerchor"
-            value={mitgliedschaft.kammerchor ? "Ja" : "Nein"}
-          />
-        </MemberSection>
+        />
       )}
     </main>
   );
 }
-
-function Field({ label, value }) {
-  return (
-    <div style={fieldStyle}>
-      <strong>{label}</strong>
-      <span
-        style={{
-          color: value ? "inherit" : "#999",
-          overflowWrap: "anywhere",
-        }}
-      >
-        {value || "—"}
-      </span>
-    </div>
-  );
-}
-
-const fieldStyle = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
-  gap: "1rem",
-  padding: "0.55rem 0",
-  borderBottom: "1px solid #edf0f3",
-};
