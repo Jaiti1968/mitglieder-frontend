@@ -46,6 +46,22 @@ export function updateKontakt(mitgliedsnummer, kontakt) {
 export function updateMitgliedschaft(mitgliedsnummer, mitgliedschaft) {
   return apiPut(
     `/api/members/${mitgliedsnummer}/mitgliedschaft`,
-    mitgliedschaft
+    mitgliedschaft,
   );
+}
+
+export function getDatenschutz(mitgliedsnummer) {
+  return apiGet(`/api/members/${mitgliedsnummer}/datenschutz`);
+}
+
+export function updateDatenschutz(mitgliedsnummer, datenschutz) {
+  return apiPut(`/api/members/${mitgliedsnummer}/datenschutz`, datenschutz);
+}
+
+export function getChorkleidung(mitgliedsnummer) {
+  return apiGet(`/api/members/${mitgliedsnummer}/chorkleidung`);
+}
+
+export function updateChorkleidung(mitgliedsnummer, chorkleidung) {
+  return apiPut(`/api/members/${mitgliedsnummer}/chorkleidung`, chorkleidung);
 }

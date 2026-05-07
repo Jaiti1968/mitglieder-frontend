@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  getChorkleidung,
+  getDatenschutz,
   getMember,
+  updateChorkleidung,
+  updateDatenschutz,
   updateKontakt,
   updateMitgliedschaft,
   updateStammdaten,
@@ -12,6 +16,8 @@ import { getMemberStatuses, getVoices } from "../api/lookupApi";
 import MemberStammdatenForm from "../components/members/details/MemberStammdatenForm";
 import MemberContactForm from "../components/members/details/MemberContactForm";
 import MemberMembershipForm from "../components/members/details/MemberMembershipForm";
+import MemberDatenschutzForm from "../components/members/details/MemberDatenschutzForm";
+import MemberChorkleidungForm from "../components/members/details/MemberChorkleidungForm";
 import MemberHeader from "../components/members/details/MemberHeader";
 import MemberSection from "../components/members/details/MemberSection";
 import MemberTabs from "../components/members/details/MemberTabs";
@@ -42,6 +48,28 @@ export default function MemberDetailPage() {
   } = useQuery({
     queryKey: ["member", mitgliedsnummer],
     queryFn: () => getMember(mitgliedsnummer),
+  });
+
+  const {
+    data: datenschutz = {},
+    isLoading: isDatenschutzLoading,
+    isError: isDatenschutzError,
+    error: datenschutzLoadError,
+  } = useQuery({
+    queryKey: ["member", mitgliedsnummer, "datenschutz"],
+    queryFn: () => getDatenschutz(mitgliedsnummer),
+    enabled: activeTab === "datenschutz",
+  });
+
+  const {
+    data: chorkleidung = {},
+    isLoading: isChorkleidungLoading,
+    isError: isChorkleidungError,
+    error: chorkleidungLoadError,
+  } = useQuery({
+    queryKey: ["member", mitgliedsnummer, "chorkleidung"],
+    queryFn: () => getChorkleidung(mitgliedsnummer),
+    enabled: activeTab === "chorkleidung",
   });
 
   const { data: statuses = [] } = useQuery({
@@ -101,6 +129,32 @@ export default function MemberDetailPage() {
           ...mitgliedschaft,
         },
       });
+    },
+  });
+
+  const updateDatenschutzMutation = useMutation({
+    mutationFn: (formData) => updateDatenschutz(mitgliedsnummer, formData),
+    onSuccess: (_response, formData) => {
+      queryClient.setQueryData(
+        ["member", mitgliedsnummer, "datenschutz"],
+        (current) => ({
+          ...(current ?? {}),
+          ...formData,
+        }),
+      );
+    },
+  });
+
+  const updateChorkleidungMutation = useMutation({
+    mutationFn: (formData) => updateChorkleidung(mitgliedsnummer, formData),
+    onSuccess: (_response, formData) => {
+      queryClient.setQueryData(
+        ["member", mitgliedsnummer, "chorkleidung"],
+        (current) => ({
+          ...(current ?? {}),
+          ...formData,
+        }),
+      );
     },
   });
 
@@ -188,7 +242,6 @@ export default function MemberDetailPage() {
               onAutoSaveStart={() => autoSaveStatus.markSaving("stammdaten")}
               onAutoSaveSuccess={() => autoSaveStatus.markSaved("stammdaten")}
               onAutoSaveError={() => autoSaveStatus.markFailed("stammdaten")}
-              onValidationError={() => autoSaveStatus.markSaved("stammdaten")}
               serverError={updateStammdatenMutation.error}
               onClearServerError={() => updateStammdatenMutation.reset()}
             />
@@ -215,7 +268,6 @@ export default function MemberDetailPage() {
               onAutoSaveStart={() => autoSaveStatus.markSaving("kontakt")}
               onAutoSaveSuccess={() => autoSaveStatus.markSaved("kontakt")}
               onAutoSaveError={() => autoSaveStatus.markFailed("kontakt")}
-              onValidationError={() => autoSaveStatus.clearSaving("kontakt")}
               serverError={updateKontaktMutation.error}
               onClearServerError={() => updateKontaktMutation.reset()}
             />
@@ -253,6 +305,94 @@ export default function MemberDetailPage() {
               serverError={updateMitgliedschaftMutation.error}
               onClearServerError={() => updateMitgliedschaftMutation.reset()}
             />
+          }
+        />
+      )}
+
+      {activeTab === "datenschutz" && (
+        <MemberSection
+          title="Datenschutz"
+          isEditing={true}
+          errorMessage={
+            updateDatenschutzMutation.error?.validationErrors?.length
+              ? null
+              : updateDatenschutzMutation.error?.message
+          }
+          isSaving={updateDatenschutzMutation.isPending}
+          form={
+            <>
+              {isDatenschutzLoading && <p>Lade Datenschutz...</p>}
+
+              {isDatenschutzError && (
+                <ErrorBox
+                  message={`Fehler beim Laden Datenschutz: ${datenschutzLoadError.message}`}
+                />
+              )}
+
+              {!isDatenschutzLoading && !isDatenschutzError && (
+                <MemberDatenschutzForm
+                  datenschutz={datenschutz}
+                  onChange={(formData) =>
+                    updateDatenschutzMutation.mutateAsync(formData)
+                  }
+                  onAutoSaveStart={() =>
+                    autoSaveStatus.markSaving("datenschutz")
+                  }
+                  onAutoSaveSuccess={() =>
+                    autoSaveStatus.markSaved("datenschutz")
+                  }
+                  onAutoSaveError={() =>
+                    autoSaveStatus.markFailed("datenschutz")
+                  }
+                  serverError={updateDatenschutzMutation.error}
+                  onClearServerError={() => updateDatenschutzMutation.reset()}
+                />
+              )}
+            </>
+          }
+        />
+      )}
+
+      {activeTab === "chorkleidung" && (
+        <MemberSection
+          title="Chorkleidung"
+          isEditing={true}
+          errorMessage={
+            updateChorkleidungMutation.error?.validationErrors?.length
+              ? null
+              : updateChorkleidungMutation.error?.message
+          }
+          isSaving={updateChorkleidungMutation.isPending}
+          form={
+            <>
+              {isChorkleidungLoading && <p>Lade Chorkleidung...</p>}
+
+              {isChorkleidungError && (
+                <ErrorBox
+                  message={`Fehler beim Laden Chorkleidung: ${chorkleidungLoadError.message}`}
+                />
+              )}
+
+              {!isChorkleidungLoading && !isChorkleidungError && (
+                <MemberChorkleidungForm
+                  chorkleidung={chorkleidung}
+                  onChange={(formData) =>
+                    updateChorkleidungMutation.mutateAsync(formData)
+                  }
+                  onAutoSaveStart={() =>
+                    autoSaveStatus.markSaving("chorkleidung")
+                  }
+                  onAutoSaveSuccess={() =>
+                    autoSaveStatus.markSaved("chorkleidung")
+                  }
+                  onAutoSaveError={() =>
+                    autoSaveStatus.markFailed("chorkleidung")
+                  }
+                  serverError={updateChorkleidungMutation.error}
+                  onClearServerError={() => updateChorkleidungMutation.reset()}
+                />
+              )}
+            </>
           }
         />
       )}

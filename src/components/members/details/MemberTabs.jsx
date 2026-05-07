@@ -2,6 +2,8 @@ const tabs = [
   { id: "stammdaten", label: "Stammdaten" },
   { id: "kontakt", label: "Kontakt" },
   { id: "mitgliedschaft", label: "Mitgliedschaft" },
+  { id: "datenschutz", label: "Datenschutz" },
+  { id: "chorkleidung", label: "Chorkleidung" },
 ];
 
 export default function MemberTabs({ activeTab, onTabChange }) {
