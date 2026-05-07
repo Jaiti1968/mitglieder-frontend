@@ -37,7 +37,13 @@ export default function CreateMemberPage() {
     briefanrede: "",
   });
 
-  const [mitgliedschaft, setMitgliedschaft] = useState({});
+  const [mitgliedschaft, setMitgliedschaft] = useState({
+    eintritt: "",
+    austritt: "",
+    mitgliedsstatusId: "",
+    stimmeId: "",
+    kammerchor: false,
+  });
 
   const { data: statuses = [] } = useQuery({
     queryKey: ["member-statuses"],
@@ -67,22 +73,18 @@ export default function CreateMemberPage() {
     : vornameVorhanden && nachnameVorhanden;
 
   function handleCreate() {
-    const normalizedStammdaten = {
-      ...stammdaten,
-      personFirma: stammdaten.personFirma === true,
-      anrede: stammdaten.personFirma ? "" : stammdaten.anrede,
-      akademischerTitel: stammdaten.personFirma
-        ? ""
-        : stammdaten.akademischerTitel,
-      geburtsdatum: stammdaten.personFirma ? "" : stammdaten.geburtsdatum,
-    };
+    createMemberMutation.reset();
 
     createMemberMutation.mutate({
-      stammdaten: normalizedStammdaten,
-      kontakt,
-      mitgliedschaft,
+      stammdaten: normalizeStammdaten(stammdaten),
+      kontakt: normalizeKontakt(kontakt),
+      mitgliedschaft: normalizeMitgliedschaft(mitgliedschaft),
     });
   }
+
+  const showGlobalCreateError =
+    createMemberMutation.error &&
+    !createMemberMutation.error?.validationErrors?.length;
 
   return (
     <main>
@@ -106,7 +108,9 @@ export default function CreateMemberPage() {
 
       <MemberTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <ErrorBox message={createMemberMutation.error?.message} />
+      {showGlobalCreateError && (
+        <ErrorBox message={createMemberMutation.error.message} />
+      )}
 
       {activeTab === "stammdaten" && (
         <MemberSection
@@ -120,6 +124,7 @@ export default function CreateMemberPage() {
               stammdaten={stammdaten}
               onChange={setStammdaten}
               serverError={createMemberMutation.error}
+              onClearServerError={() => createMemberMutation.reset()}
             />
           }
         />
@@ -136,6 +141,8 @@ export default function CreateMemberPage() {
             <MemberContactForm
               kontakt={kontakt}
               onChange={setKontakt}
+              serverError={createMemberMutation.error}
+              onClearServerError={() => createMemberMutation.reset()}
             />
           }
         />
@@ -154,6 +161,8 @@ export default function CreateMemberPage() {
               statuses={statuses}
               voices={voices}
               onChange={setMitgliedschaft}
+              serverError={createMemberMutation.error}
+              onClearServerError={() => createMemberMutation.reset()}
             />
           }
         />
@@ -166,9 +175,7 @@ export default function CreateMemberPage() {
             onClick={handleCreate}
             disabled={!canCreate || createMemberMutation.isPending}
           >
-            {createMemberMutation.isPending
-              ? "Lege an..."
-              : "Mitglied anlegen"}
+            {createMemberMutation.isPending ? "Lege an..." : "Mitglied anlegen"}
           </button>
 
           <button
@@ -190,6 +197,45 @@ export default function CreateMemberPage() {
       </section>
     </main>
   );
+}
+
+function normalizeStammdaten(stammdaten) {
+  const isFirma = stammdaten.personFirma === true;
+
+  return {
+    personFirma: isFirma,
+    anrede: isFirma ? "" : (stammdaten.anrede ?? ""),
+    akademischerTitel: isFirma ? "" : (stammdaten.akademischerTitel ?? ""),
+    vorname: stammdaten.vorname ?? "",
+    nachname: stammdaten.nachname ?? "",
+    geburtsdatum: isFirma ? "" : (stammdaten.geburtsdatum ?? ""),
+    plz: stammdaten.plz ?? "",
+    ort: stammdaten.ort ?? "",
+    strasseHausNr: stammdaten.strasseHausNr ?? "",
+  };
+}
+
+function normalizeKontakt(kontakt) {
+  return {
+    telefonPrivat: kontakt.telefonPrivat ?? "",
+    telefonGeschaeftlich: kontakt.telefonGeschaeftlich ?? "",
+    mobiltelefon: kontakt.mobiltelefon ?? "",
+    email: kontakt.email ?? "",
+    adresszusatz: kontakt.adresszusatz ?? "",
+    briefanrede: kontakt.briefanrede ?? "",
+  };
+}
+
+function normalizeMitgliedschaft(mitgliedschaft) {
+  return {
+    eintritt: mitgliedschaft.eintritt || null,
+    austritt: mitgliedschaft.austritt || null,
+    mitgliedsstatusId: mitgliedschaft.mitgliedsstatusId
+      ? Number(mitgliedschaft.mitgliedsstatusId)
+      : null,
+    stimmeId: mitgliedschaft.stimmeId ? Number(mitgliedschaft.stimmeId) : null,
+    kammerchor: mitgliedschaft.kammerchor === true,
+  };
 }
 
 const headerStyle = {

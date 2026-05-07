@@ -132,19 +132,16 @@ export default function MemberStammdatenForm({
         const validationSignature = JSON.stringify(clientValidationErrors);
 
         if (clientValidationErrors.length > 0) {
-          if (validationSignature !== lastValidationSignature.current) {
-            clearErrors();
+          clearErrors();
 
-            clientValidationErrors.forEach((validationError) => {
-              setError(validationError.field, {
-                type: "client",
-                message: validationError.message,
-              });
+          clientValidationErrors.forEach((validationError) => {
+            setError(validationError.field, {
+              type: "client",
+              message: validationError.message,
             });
+          });
 
-            lastValidationSignature.current = validationSignature;
-          }
-
+          lastValidationSignature.current = validationSignature;
           return;
         }
 
@@ -296,7 +293,8 @@ export default function MemberStammdatenForm({
       {!isFirma && (
         <FormField
           label="Geburtsdatum"
-          type="date"
+          type="text"
+          placeholder="YYYY-MM-DD"
           error={errors.geburtsdatum?.message}
           {...register("geburtsdatum")}
         />
@@ -340,6 +338,7 @@ function validateStammdaten(values) {
   const nachname = values?.nachname ?? "";
   const anrede = values?.anrede ?? "";
   const akademischerTitel = values?.akademischerTitel ?? "";
+  const geburtsdatum = values?.geburtsdatum ?? "";
   const plz = values?.plz ?? "";
   const ort = values?.ort ?? "";
   const strasseHausNr = values?.strasseHausNr ?? "";
@@ -355,6 +354,13 @@ function validateStammdaten(values) {
     validationErrors.push({
       field: "nachname",
       message: isFirma ? "Firmenname ist Pflicht" : "Nachname ist Pflicht",
+    });
+  }
+
+  if (geburtsdatum && !isCompleteDate(geburtsdatum)) {
+    validationErrors.push({
+      field: "geburtsdatum",
+      message: "Datum muss vollständig sein",
     });
   }
 
@@ -412,6 +418,10 @@ function validateStammdaten(values) {
   }
 
   return validationErrors;
+}
+
+function isCompleteDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function mapBackendValidationErrors(error, setError, allowedFields = null) {

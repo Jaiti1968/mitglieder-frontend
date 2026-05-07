@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 const AUTO_SAVE_DELAY_MS = 500;
 
@@ -10,25 +11,79 @@ export default function MemberMembershipForm({
   onAutoSaveStart,
   onAutoSaveSuccess,
   onAutoSaveError,
+  serverError,
+  onClearServerError,
 }) {
   const isFirstRender = useRef(true);
+  const lastValidationSignature = useRef("");
 
-  const [formData, setFormData] = useState({
-    mitgliedsstatusId: mitgliedschaft?.mitgliedsstatusId ?? "",
-    stimmeId: mitgliedschaft?.stimmeId ?? "",
-    eintritt: mitgliedschaft?.eintritt ?? "",
-    austritt: mitgliedschaft?.austritt ?? "",
-    kammerchor: mitgliedschaft?.kammerchor ?? false,
+  const callbacksRef = useRef({
+    onChange,
+    onAutoSaveStart,
+    onAutoSaveSuccess,
+    onAutoSaveError,
+    onClearServerError,
   });
 
-  const kandidatStatus = statuses.find(
-    (s) => s.label?.toLowerCase() === "kandidat"
-  );
+  useEffect(() => {
+    callbacksRef.current = {
+      onChange,
+      onAutoSaveStart,
+      onAutoSaveSuccess,
+      onAutoSaveError,
+      onClearServerError,
+    };
+  }, [
+    onChange,
+    onAutoSaveStart,
+    onAutoSaveSuccess,
+    onAutoSaveError,
+    onClearServerError,
+  ]);
 
-  const effectiveStatusId =
-    formData.mitgliedsstatusId ||
-    kandidatStatus?.id ||
-    (statuses.length > 0 ? statuses[0].id : "");
+  const {
+    register,
+    control,
+    reset,
+    setError,
+    clearErrors,
+    formState: { errors, isDirty },
+  } = useForm({
+    mode: "onChange",
+    defaultValues: {
+      eintritt: "",
+      austritt: "",
+      mitgliedsstatusId: "",
+      stimmeId: "",
+      kammerchor: false,
+    },
+  });
+
+  const values = useWatch({ control });
+  const valuesSignature = JSON.stringify(values);
+
+  useEffect(() => {
+    reset({
+      eintritt: mitgliedschaft?.eintritt ?? "",
+      austritt: mitgliedschaft?.austritt ?? "",
+      mitgliedsstatusId: mitgliedschaft?.mitgliedsstatusId ?? "",
+      stimmeId: mitgliedschaft?.stimmeId ?? "",
+      kammerchor: mitgliedschaft?.kammerchor ?? false,
+    });
+
+    isFirstRender.current = true;
+    lastValidationSignature.current = "";
+  }, [mitgliedschaft, reset]);
+
+  useEffect(() => {
+    mapBackendValidationErrors(serverError, setError, [
+      "eintritt",
+      "austritt",
+      "mitgliedsstatusId",
+      "stimmeId",
+      "kammerchor",
+    ]);
+  }, [serverError, setError]);
 
   useEffect(() => {
     if (isFirstRender.current) {
@@ -36,143 +91,278 @@ export default function MemberMembershipForm({
       return;
     }
 
+    if (!isDirty) {
+      return;
+    }
+
     const timeoutId = window.setTimeout(async () => {
       try {
-        onAutoSaveStart?.();
+        const clientValidationErrors = validateMitgliedschaft(values);
+        const validationSignature = JSON.stringify(clientValidationErrors);
 
-        const payload = {
-          eintritt: formData.eintritt || null,
-          austritt: formData.austritt || null,
-          mitgliedsstatusId: Number(effectiveStatusId),
-          stimmeId: formData.stimmeId ? Number(formData.stimmeId) : null,
-          kammerchor: Boolean(formData.kammerchor),
-        };
+        if (clientValidationErrors.length > 0) {
+          clearErrors();
 
-        const result = onChange?.(payload);
+          clientValidationErrors.forEach((validationError) => {
+            setError(validationError.field, {
+              type: "client",
+              message: validationError.message,
+            });
+          });
+
+          lastValidationSignature.current = validationSignature;
+
+          return;
+        }
+
+        lastValidationSignature.current = "";
+
+        callbacksRef.current.onClearServerError?.();
+        clearErrors();
+
+        callbacksRef.current.onAutoSaveStart?.();
+
+        const payload = createPayload(values);
+        const result = callbacksRef.current.onChange?.(payload);
 
         if (result instanceof Promise) {
           await result;
         }
 
-        onAutoSaveSuccess?.();
+        callbacksRef.current.onAutoSaveSuccess?.();
       } catch (error) {
         console.error("Auto-Save Mitgliedschaft fehlgeschlagen:", error);
-        onAutoSaveError?.();
+
+        const hasValidationErrors =
+          Array.isArray(error?.validationErrors) &&
+          error.validationErrors.length > 0;
+
+        mapBackendValidationErrors(error, setError);
+
+        if (hasValidationErrors) {
+          return;
+        }
+
+        callbacksRef.current.onAutoSaveError?.();
       }
     }, AUTO_SAVE_DELAY_MS);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-
-    // Wichtig: onChange NICHT in Dependencies, sonst Save-Loop
+    // Wichtig: values ist bewusst nicht in den Dependencies.
+    // valuesSignature steuert den Effekt stabil und verhindert Autosave-Loops.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, effectiveStatusId]);
-
-  function handleChange(event) {
-    const { name, value, type, checked } = event.target;
-
-    setFormData((current) => ({
-      ...current,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  }
+  }, [valuesSignature, isDirty, clearErrors, setError]);
 
   return (
-    <form>
+    <form noValidate>
+      <Controller
+        name="eintritt"
+        control={control}
+        render={({ field }) => (
+          <FormField
+            label="Eintritt"
+            type="text"
+            placeholder="YYYY-MM-DD"
+            error={errors.eintritt?.message}
+            value={field.value ?? ""}
+            onChange={(event) => field.onChange(event.target.value)}
+            onBlur={field.onBlur}
+            name={field.name}
+            ref={field.ref}
+          />
+        )}
+      />
+
+      <Controller
+        name="austritt"
+        control={control}
+        render={({ field }) => (
+          <FormField
+            label="Austritt"
+            type="text"
+            placeholder="YYYY-MM-DD"
+            error={errors.austritt?.message}
+            value={field.value ?? ""}
+            onChange={(event) => field.onChange(event.target.value)}
+            onBlur={field.onBlur}
+            name={field.name}
+            ref={field.ref}
+          />
+        )}
+      />
+
       <SelectField
-        label="Status"
-        name="mitgliedsstatusId"
-        value={effectiveStatusId}
-        onChange={handleChange}
-        options={statuses.map((status) => ({
-          value: status.id,
-          label: status.label,
-        }))}
+        label="Mitgliederstatus"
+        required
+        error={errors.mitgliedsstatusId?.message}
+        {...register("mitgliedsstatusId")}
+        options={statuses}
       />
 
       <SelectField
         label="Stimme"
-        name="stimmeId"
-        value={formData.stimmeId}
-        onChange={handleChange}
-        options={[
-          { value: "", label: "—" },
-          ...voices.map((voice) => ({
-            value: voice.id,
-            label: voice.label,
-          })),
-        ]}
+        required
+        error={errors.stimmeId?.message}
+        {...register("stimmeId")}
+        options={voices}
       />
 
-      <FormField
-        label="Eintritt"
-        name="eintritt"
-        type="date"
-        value={formData.eintritt ?? ""}
-        onChange={handleChange}
-      />
+      <label style={fieldStyle}>
+        <span>Kammerchor</span>
 
-      <FormField
-        label="Austritt"
-        name="austritt"
-        type="date"
-        value={formData.austritt ?? ""}
-        onChange={handleChange}
-      />
-
-      <CheckboxField
-        label="Kammerchor"
-        name="kammerchor"
-        checked={formData.kammerchor}
-        onChange={handleChange}
-      />
+        <div>
+          <input type="checkbox" {...register("kammerchor")} />
+        </div>
+      </label>
     </form>
   );
 }
 
-/* ---------- Komponenten ---------- */
+function createPayload(values) {
+  return {
+    eintritt: values?.eintritt || null,
+    austritt: values?.austritt || null,
+    mitgliedsstatusId: values?.mitgliedsstatusId
+      ? Number(values.mitgliedsstatusId)
+      : null,
+    stimmeId: values?.stimmeId ? Number(values.stimmeId) : null,
+    kammerchor: values?.kammerchor === true,
+  };
+}
 
-function FormField({ label, name, value, onChange, type = "text" }) {
+function validateMitgliedschaft(values) {
+  const validationErrors = [];
+
+  const eintritt = values?.eintritt ?? "";
+  const austritt = values?.austritt ?? "";
+
+  if (eintritt && !isCompleteDate(eintritt)) {
+    validationErrors.push({
+      field: "eintritt",
+      message: "Datum muss vollständig sein",
+    });
+  }
+
+  if (austritt && !isCompleteDate(austritt)) {
+    validationErrors.push({
+      field: "austritt",
+      message: "Datum muss vollständig sein",
+    });
+  }
+
+  const mitgliedsstatusId = values?.mitgliedsstatusId ?? "";
+  const stimmeId = values?.stimmeId ?? "";
+
+  if (!mitgliedsstatusId) {
+    validationErrors.push({
+      field: "mitgliedsstatusId",
+      message: "Mitgliederstatus ist Pflicht",
+    });
+  }
+
+  if (!stimmeId) {
+    validationErrors.push({
+      field: "stimmeId",
+      message: "Stimme ist Pflicht",
+    });
+  }
+
+  if (isCompleteDate(eintritt) && isCompleteDate(austritt)) {
+    if (austritt < eintritt) {
+      validationErrors.push({
+        field: "austritt",
+        message: "Austritt darf nicht vor Eintritt liegen",
+      });
+    }
+  }
+
+  return validationErrors;
+}
+
+function isCompleteDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function mapBackendValidationErrors(error, setError, allowedFields = null) {
+  if (!Array.isArray(error?.validationErrors)) {
+    return;
+  }
+
+  error.validationErrors.forEach((validationError) => {
+    if (!validationError?.field) {
+      return;
+    }
+
+    if (allowedFields && !allowedFields.includes(validationError.field)) {
+      return;
+    }
+
+    setError(validationError.field, {
+      type: "server",
+      message: validationError.message || "Ungültiger Wert",
+    });
+  });
+}
+
+function FormField({
+  label,
+  error,
+  type = "text",
+  required = false,
+  ...fieldProps
+}) {
   return (
     <label style={fieldStyle}>
-      <span>{label}</span>
-      <input name={name} type={type} value={value} onChange={onChange} />
+      <span>
+        {label}
+        {required ? " *" : ""}
+      </span>
+
+      <div>
+        <input
+          type={type}
+          aria-invalid={error ? "true" : "false"}
+          {...fieldProps}
+        />
+
+        {error && <div style={errorStyle}>{error}</div>}
+      </div>
     </label>
   );
 }
 
-function SelectField({ label, name, value, onChange, options }) {
+function SelectField({
+  label,
+  error,
+  options,
+  required = false,
+  ...fieldProps
+}) {
   return (
     <label style={fieldStyle}>
-      <span>{label}</span>
-      <select name={name} value={value} onChange={onChange}>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <span>
+        {label}
+        {required ? " *" : ""}
+      </span>
+
+      <div>
+        <select aria-invalid={error ? "true" : "false"} {...fieldProps}>
+          <option value="">Bitte auswählen</option>
+
+          {options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        {error && <div style={errorStyle}>{error}</div>}
+      </div>
     </label>
   );
 }
-
-function CheckboxField({ label, name, checked, onChange }) {
-  return (
-    <label style={fieldStyle}>
-      <span>{label}</span>
-      <input
-        name={name}
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        style={{ justifySelf: "start" }}
-      />
-    </label>
-  );
-}
-
-/* ---------- Styles ---------- */
 
 const fieldStyle = {
   display: "grid",
@@ -180,4 +370,10 @@ const fieldStyle = {
   alignItems: "center",
   gap: "1rem",
   marginBottom: "0.5rem",
+};
+
+const errorStyle = {
+  color: "#b00020",
+  fontSize: "0.85rem",
+  marginTop: "0.25rem",
 };

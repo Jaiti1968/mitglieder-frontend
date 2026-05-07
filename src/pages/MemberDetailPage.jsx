@@ -250,6 +250,8 @@ export default function MemberDetailPage() {
               onAutoSaveError={() =>
                 autoSaveStatus.markFailed("mitgliedschaft")
               }
+              serverError={updateMitgliedschaftMutation.error}
+              onClearServerError={() => updateMitgliedschaftMutation.reset()}
             />
           }
         />
