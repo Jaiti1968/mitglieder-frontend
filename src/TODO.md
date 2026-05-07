@@ -1,7 +1,7 @@
 # TODO
 
 ## UX
-- [ ] Erfolgsmeldung
+- [X] Erfolgsmeldung
 - [X] Unsaved Changes
 
 ## Features

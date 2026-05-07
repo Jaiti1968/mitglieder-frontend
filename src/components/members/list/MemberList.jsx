@@ -5,36 +5,71 @@ export default function MemberList({ members, searchParams }) {
 
   return (
     <div style={listStyle}>
-      {members.map((member) => (
-        <Link
-          key={member.mitgliedsnummer}
-          to={`/members/${member.mitgliedsnummer}?${searchParams.toString()}`}
-          className="member-card"
-        >
-          <div>
-            <strong>
-              {member.vorname} {member.nachname}
-            </strong>
-            <div style={{ color: "#666", fontSize: "0.9rem" }}>
-              Nr. {member.mitgliedsnummer}
+      {members.map((member) => {
+        const display = getMemberDisplay(member);
+
+        return (
+          <Link
+            key={member.mitgliedsnummer}
+            to={`/members/${member.mitgliedsnummer}?${searchParams.toString()}`}
+            className="member-card"
+          >
+            <div>
+              <strong>{display.name}</strong>
+
+              {display.subtitle && (
+                <div style={{ color: "#666", fontSize: "0.9rem" }}>
+                  {display.subtitle}
+                </div>
+              )}
+
+              <div style={{ color: "#666", fontSize: "0.9rem" }}>
+                Nr. {member.mitgliedsnummer}
+              </div>
             </div>
-          </div>
 
-          <div style={badgeContainer}>
-            {member.ort && <Badge type="neutral">{member.ort}</Badge>}
+            <div style={badgeContainer}>
+              {display.isFirma && (
+                <Badge type="neutral">Firma / Organisation</Badge>
+              )}
 
-            {member.mitgliedsstatus && (
-              <Badge type={getStatusType(member.mitgliedsstatus)}>
-                {member.mitgliedsstatus}
-              </Badge>
-            )}
+              {member.ort && <Badge type="neutral">{member.ort}</Badge>}
 
-            {member.stimme && <Badge type="voice">{member.stimme}</Badge>}
-          </div>
-        </Link>
-      ))}
+              {member.mitgliedsstatus && (
+                <Badge type={getStatusType(member.mitgliedsstatus)}>
+                  {member.mitgliedsstatus}
+                </Badge>
+              )}
+
+              {member.stimme && <Badge type="voice">{member.stimme}</Badge>}
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
+}
+
+/* ---------- Fachliche Anzeige ---------- */
+
+function getMemberDisplay(member) {
+  const isFirma = member.personFirma === true;
+
+  if (isFirma) {
+    return {
+      isFirma,
+      name: member.nachname || "Firma ohne Namen",
+      subtitle: member.vorname ? `Firmenzusatz: ${member.vorname}` : null,
+    };
+  }
+
+  return {
+    isFirma,
+    name:
+      [member.vorname, member.nachname].filter(Boolean).join(" ") ||
+      "Mitglied ohne Namen",
+    subtitle: null,
+  };
 }
 
 /* ---------- UI ---------- */

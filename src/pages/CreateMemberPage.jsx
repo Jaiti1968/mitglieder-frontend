@@ -17,6 +17,7 @@ export default function CreateMemberPage() {
   const [activeTab, setActiveTab] = useState("stammdaten");
 
   const [stammdaten, setStammdaten] = useState({
+    personFirma: false,
     anrede: "Herr",
     akademischerTitel: "",
     vorname: "",
@@ -56,11 +57,28 @@ export default function CreateMemberPage() {
     },
   });
 
+  const isFirma = stammdaten.personFirma === true;
+
+  const vornameVorhanden = stammdaten.vorname?.trim().length > 0;
   const nachnameVorhanden = stammdaten.nachname?.trim().length > 0;
 
+  const canCreate = isFirma
+    ? nachnameVorhanden
+    : vornameVorhanden && nachnameVorhanden;
+
   function handleCreate() {
+    const normalizedStammdaten = {
+      ...stammdaten,
+      personFirma: stammdaten.personFirma === true,
+      anrede: stammdaten.personFirma ? "" : stammdaten.anrede,
+      akademischerTitel: stammdaten.personFirma
+        ? ""
+        : stammdaten.akademischerTitel,
+      geburtsdatum: stammdaten.personFirma ? "" : stammdaten.geburtsdatum,
+    };
+
     createMemberMutation.mutate({
-      stammdaten,
+      stammdaten: normalizedStammdaten,
       kontakt,
       mitgliedschaft,
     });
@@ -68,7 +86,10 @@ export default function CreateMemberPage() {
 
   return (
     <main>
-      <Link to="/members" style={{ display: "inline-block", marginBottom: "1rem" }}>
+      <Link
+        to="/members"
+        style={{ display: "inline-block", marginBottom: "1rem" }}
+      >
         ← Zurück zur Liste
       </Link>
 
@@ -76,6 +97,7 @@ export default function CreateMemberPage() {
         <h1 style={{ marginBottom: "0.25rem", fontSize: "1.8rem" }}>
           Neues Mitglied anlegen
         </h1>
+
         <p style={{ margin: 0, color: "#555" }}>
           Die Eingaben werden automatisch übernommen. Zum Abschluss unten auf
           „Mitglied anlegen“ klicken.
@@ -97,6 +119,7 @@ export default function CreateMemberPage() {
             <MemberStammdatenForm
               stammdaten={stammdaten}
               onChange={setStammdaten}
+              serverError={createMemberMutation.error}
             />
           }
         />
@@ -141,9 +164,11 @@ export default function CreateMemberPage() {
           <button
             type="button"
             onClick={handleCreate}
-            disabled={!nachnameVorhanden || createMemberMutation.isPending}
+            disabled={!canCreate || createMemberMutation.isPending}
           >
-            {createMemberMutation.isPending ? "Lege an..." : "Mitglied anlegen"}
+            {createMemberMutation.isPending
+              ? "Lege an..."
+              : "Mitglied anlegen"}
           </button>
 
           <button
@@ -154,6 +179,14 @@ export default function CreateMemberPage() {
             Abbrechen
           </button>
         </div>
+
+        {!canCreate && (
+          <p style={hintStyle}>
+            {isFirma
+              ? "Bitte mindestens den Firmennamen eingeben."
+              : "Bitte Vorname und Nachname eingeben."}
+          </p>
+        )}
       </section>
     </main>
   );
@@ -175,4 +208,11 @@ const actionCardStyle = {
   padding: "1.25rem",
   marginBottom: "1rem",
   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
+};
+
+const hintStyle = {
+  marginBottom: 0,
+  marginTop: "0.75rem",
+  color: "#666",
+  fontSize: "0.9rem",
 };

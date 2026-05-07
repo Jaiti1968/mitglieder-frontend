@@ -173,7 +173,11 @@ export default function MemberDetailPage() {
         <MemberSection
           title="Stammdaten"
           isEditing={true}
-          errorMessage={updateStammdatenMutation.error?.message}
+          errorMessage={
+            updateStammdatenMutation.error?.validationErrors?.length
+              ? null
+              : updateStammdatenMutation.error?.message
+          }
           isSaving={updateStammdatenMutation.isPending}
           form={
             <MemberStammdatenForm
@@ -184,6 +188,9 @@ export default function MemberDetailPage() {
               onAutoSaveStart={() => autoSaveStatus.markSaving("stammdaten")}
               onAutoSaveSuccess={() => autoSaveStatus.markSaved("stammdaten")}
               onAutoSaveError={() => autoSaveStatus.markFailed("stammdaten")}
+              onValidationError={() => autoSaveStatus.markSaved("stammdaten")}
+              serverError={updateStammdatenMutation.error}
+              onClearServerError={() => updateStammdatenMutation.reset()}
             />
           }
         />
@@ -193,7 +200,11 @@ export default function MemberDetailPage() {
         <MemberSection
           title="Kontakt"
           isEditing={true}
-          errorMessage={updateKontaktMutation.error?.message}
+          errorMessage={
+            updateKontaktMutation.error?.validationErrors?.length
+              ? null
+              : updateKontaktMutation.error?.message
+          }
           isSaving={updateKontaktMutation.isPending}
           form={
             <MemberContactForm
@@ -204,6 +215,9 @@ export default function MemberDetailPage() {
               onAutoSaveStart={() => autoSaveStatus.markSaving("kontakt")}
               onAutoSaveSuccess={() => autoSaveStatus.markSaved("kontakt")}
               onAutoSaveError={() => autoSaveStatus.markFailed("kontakt")}
+              onValidationError={() => autoSaveStatus.clearSaving("kontakt")}
+              serverError={updateKontaktMutation.error}
+              onClearServerError={() => updateKontaktMutation.reset()}
             />
           }
         />
@@ -213,7 +227,11 @@ export default function MemberDetailPage() {
         <MemberSection
           title="Mitgliedschaft"
           isEditing={true}
-          errorMessage={updateMitgliedschaftMutation.error?.message}
+          errorMessage={
+            updateMitgliedschaftMutation.error?.validationErrors?.length
+              ? null
+              : updateMitgliedschaftMutation.error?.message
+          }
           isSaving={updateMitgliedschaftMutation.isPending}
           form={
             <MemberMembershipForm

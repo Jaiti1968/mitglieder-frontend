@@ -6,12 +6,20 @@ export function useAutoSaveStatus() {
 
   const markSaving = useCallback((formName) => {
     setSavingForms((current) => {
+      if (current.has(formName)) {
+        return current;
+      }
+
       const next = new Set(current);
       next.add(formName);
       return next;
     });
 
     setFailedForms((current) => {
+      if (!current.has(formName)) {
+        return current;
+      }
+
       const next = new Set(current);
       next.delete(formName);
       return next;
@@ -20,6 +28,20 @@ export function useAutoSaveStatus() {
 
   const markSaved = useCallback((formName) => {
     setSavingForms((current) => {
+      if (!current.has(formName)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.delete(formName);
+      return next;
+    });
+
+    setFailedForms((current) => {
+      if (!current.has(formName)) {
+        return current;
+      }
+
       const next = new Set(current);
       next.delete(formName);
       return next;
@@ -28,20 +50,44 @@ export function useAutoSaveStatus() {
 
   const markFailed = useCallback((formName) => {
     setSavingForms((current) => {
+      if (!current.has(formName)) {
+        return current;
+      }
+
       const next = new Set(current);
       next.delete(formName);
       return next;
     });
 
     setFailedForms((current) => {
+      if (current.has(formName)) {
+        return current;
+      }
+
       const next = new Set(current);
       next.add(formName);
       return next;
     });
   }, []);
 
+  const clearSaving = useCallback((formName) => {
+    setSavingForms((current) => {
+      if (!current.has(formName)) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.delete(formName);
+      return next;
+    });
+  }, []);
+
   const clearFailed = useCallback((formName) => {
     setFailedForms((current) => {
+      if (!current.has(formName)) {
+        return current;
+      }
+
       const next = new Set(current);
       next.delete(formName);
       return next;
@@ -56,8 +102,17 @@ export function useAutoSaveStatus() {
       markSaving,
       markSaved,
       markFailed,
+      clearSaving,
       clearFailed,
     }),
-    [savingForms, failedForms, markSaving, markSaved, markFailed, clearFailed]
+    [
+      savingForms,
+      failedForms,
+      markSaving,
+      markSaved,
+      markFailed,
+      clearSaving,
+      clearFailed,
+    ],
   );
 }

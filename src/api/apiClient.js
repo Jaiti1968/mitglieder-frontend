@@ -9,26 +9,37 @@ async function handleResponse(response) {
     return response.json();
   }
 
-  // 🔴 WICHTIG: 401 behandeln
   if (response.status === 401) {
     clearAuth();
-
-    // Weiterleitung zum Login
     window.location.href = "/login";
-
     throw new Error("Nicht autorisiert");
   }
 
+  let errorBody = null;
   let errorMessage = `API-Fehler ${response.status}`;
 
   try {
-    const errorBody = await response.json();
-    if (errorBody.message) {
+    errorBody = await response.json();
+
+    if (errorBody?.message) {
       errorMessage = errorBody.message;
     }
-  } catch {}
+  } catch {
+    // Falls die Antwort kein JSON enthält, bleibt die generische Meldung.
+  }
 
-  throw new Error(errorMessage);
+  const apiError = new Error(errorMessage);
+
+  apiError.status = response.status;
+  apiError.error = errorBody?.error;
+  apiError.path = errorBody?.path;
+  apiError.requestId = errorBody?.requestId;
+  apiError.validationErrors = Array.isArray(errorBody?.validationErrors)
+    ? errorBody.validationErrors
+    : [];
+  apiError.body = errorBody;
+
+  throw apiError;
 }
 
 function createHeaders(extraHeaders = {}) {
