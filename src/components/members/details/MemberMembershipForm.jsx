@@ -1,5 +1,14 @@
 import { useEffect, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import CheckboxField from "../../forms/CheckboxField";
+import FormField from "../../forms/FormField";
+import SelectField from "../../forms/SelectField";
+import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
+import {
+  validateCompleteDate,
+  validateDateRange,
+  validateRequired,
+} from "../../../utils/forms/validationHelpers";
 
 const AUTO_SAVE_DELAY_MS = 500;
 
@@ -197,25 +206,19 @@ export default function MemberMembershipForm({
         label="Mitgliederstatus"
         required
         error={errors.mitgliedsstatusId?.message}
-        {...register("mitgliedsstatusId")}
         options={statuses}
+        {...register("mitgliedsstatusId")}
       />
 
       <SelectField
         label="Stimme"
         required
         error={errors.stimmeId?.message}
-        {...register("stimmeId")}
         options={voices}
+        {...register("stimmeId")}
       />
 
-      <label style={fieldStyle}>
-        <span>Kammerchor</span>
-
-        <div>
-          <input type="checkbox" {...register("kammerchor")} />
-        </div>
-      </label>
+      <CheckboxField label="Kammerchor" {...register("kammerchor")} />
     </form>
   );
 }
@@ -237,143 +240,45 @@ function validateMitgliedschaft(values) {
 
   const eintritt = values?.eintritt ?? "";
   const austritt = values?.austritt ?? "";
-
-  if (eintritt && !isCompleteDate(eintritt)) {
-    validationErrors.push({
-      field: "eintritt",
-      message: "Datum muss vollständig sein",
-    });
-  }
-
-  if (austritt && !isCompleteDate(austritt)) {
-    validationErrors.push({
-      field: "austritt",
-      message: "Datum muss vollständig sein",
-    });
-  }
-
   const mitgliedsstatusId = values?.mitgliedsstatusId ?? "";
   const stimmeId = values?.stimmeId ?? "";
 
-  if (!mitgliedsstatusId) {
-    validationErrors.push({
-      field: "mitgliedsstatusId",
-      message: "Mitgliederstatus ist Pflicht",
-    });
-  }
+  validateCompleteDate(
+    validationErrors,
+    "eintritt",
+    eintritt,
+    "Datum muss vollständig sein",
+  );
 
-  if (!stimmeId) {
-    validationErrors.push({
-      field: "stimmeId",
-      message: "Stimme ist Pflicht",
-    });
-  }
+  validateCompleteDate(
+    validationErrors,
+    "austritt",
+    austritt,
+    "Datum muss vollständig sein",
+  );
 
-  if (isCompleteDate(eintritt) && isCompleteDate(austritt)) {
-    if (austritt < eintritt) {
-      validationErrors.push({
-        field: "austritt",
-        message: "Austritt darf nicht vor Eintritt liegen",
-      });
-    }
-  }
+  validateRequired(
+    validationErrors,
+    "mitgliedsstatusId",
+    mitgliedsstatusId,
+    "Mitgliederstatus ist Pflicht",
+  );
+
+  validateRequired(
+    validationErrors,
+    "stimmeId",
+    stimmeId,
+    "Stimme ist Pflicht",
+  );
+
+  validateDateRange(
+    validationErrors,
+    "eintritt",
+    eintritt,
+    "austritt",
+    austritt,
+    "Austritt darf nicht vor Eintritt liegen",
+  );
 
   return validationErrors;
 }
-
-function isCompleteDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function mapBackendValidationErrors(error, setError, allowedFields = null) {
-  if (!Array.isArray(error?.validationErrors)) {
-    return;
-  }
-
-  error.validationErrors.forEach((validationError) => {
-    if (!validationError?.field) {
-      return;
-    }
-
-    if (allowedFields && !allowedFields.includes(validationError.field)) {
-      return;
-    }
-
-    setError(validationError.field, {
-      type: "server",
-      message: validationError.message || "Ungültiger Wert",
-    });
-  });
-}
-
-function FormField({
-  label,
-  error,
-  type = "text",
-  required = false,
-  ...fieldProps
-}) {
-  return (
-    <label style={fieldStyle}>
-      <span>
-        {label}
-        {required ? " *" : ""}
-      </span>
-
-      <div>
-        <input
-          type={type}
-          aria-invalid={error ? "true" : "false"}
-          {...fieldProps}
-        />
-
-        {error && <div style={errorStyle}>{error}</div>}
-      </div>
-    </label>
-  );
-}
-
-function SelectField({
-  label,
-  error,
-  options,
-  required = false,
-  ...fieldProps
-}) {
-  return (
-    <label style={fieldStyle}>
-      <span>
-        {label}
-        {required ? " *" : ""}
-      </span>
-
-      <div>
-        <select aria-invalid={error ? "true" : "false"} {...fieldProps}>
-          <option value="">Bitte auswählen</option>
-
-          {options.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        {error && <div style={errorStyle}>{error}</div>}
-      </div>
-    </label>
-  );
-}
-
-const fieldStyle = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "1rem",
-  marginBottom: "0.5rem",
-};
-
-const errorStyle = {
-  color: "#b00020",
-  fontSize: "0.85rem",
-  marginTop: "0.25rem",
-};

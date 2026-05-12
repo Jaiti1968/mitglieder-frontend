@@ -1,5 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import CheckboxField from "../../forms/CheckboxField";
+import FormField from "../../forms/FormField";
+import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
+import { toDateOnly } from "../../../utils/forms/dateHelpers";
+import {
+  validateCompleteDate,
+  validateNotFutureDate,
+} from "../../../utils/forms/validationHelpers";
 
 const AUTO_SAVE_DELAY_MS = 500;
 
@@ -187,7 +195,9 @@ export default function MemberDatenschutzForm({
 
 function createPayload(values) {
   return {
-    datumDatenschutz: values?.datumDatenschutz || null,
+    datumDatenschutz: values?.datumDatenschutz
+      ? `${values.datumDatenschutz}T00:00:00`
+      : null,
     datenschutzNr14: values?.datenschutzNr14 === true,
     datenschutzNr15: values?.datenschutzNr15 === true,
     datenschutzNr16: values?.datenschutzNr16 === true,
@@ -200,98 +210,19 @@ function validateDatenschutz(values) {
   const validationErrors = [];
   const datumDatenschutz = values?.datumDatenschutz ?? "";
 
-  if (datumDatenschutz && !isCompleteDate(datumDatenschutz)) {
-    validationErrors.push({
-      field: "datumDatenschutz",
-      message: "Datum muss vollständig sein",
-    });
-  }
+  validateCompleteDate(
+    validationErrors,
+    "datumDatenschutz",
+    datumDatenschutz,
+    "Datum muss vollständig sein",
+  );
 
-  if (isCompleteDate(datumDatenschutz)) {
-    const selectedDate = new Date(datumDatenschutz);
-    const now = new Date();
-
-    if (selectedDate > now) {
-      validationErrors.push({
-        field: "datumDatenschutz",
-        message: "Datum Datenschutz darf nicht in der Zukunft liegen",
-      });
-    }
-  }
+  validateNotFutureDate(
+    validationErrors,
+    "datumDatenschutz",
+    datumDatenschutz,
+    "Datum Datenschutz darf nicht in der Zukunft liegen",
+  );
 
   return validationErrors;
 }
-
-function isCompleteDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value ?? "");
-}
-
-function mapBackendValidationErrors(error, setError, allowedFields = null) {
-  if (!Array.isArray(error?.validationErrors)) {
-    return;
-  }
-
-  error.validationErrors.forEach((validationError) => {
-    if (!validationError?.field) {
-      return;
-    }
-
-    if (allowedFields && !allowedFields.includes(validationError.field)) {
-      return;
-    }
-
-    setError(validationError.field, {
-      type: "server",
-      message: validationError.message || "Ungültiger Wert",
-    });
-  });
-}
-
-function FormField({ label, error, type = "text", ...fieldProps }) {
-  return (
-    <label style={fieldStyle}>
-      <span>{label}</span>
-
-      <div>
-        <input
-          type={type}
-          aria-invalid={error ? "true" : "false"}
-          {...fieldProps}
-        />
-
-        {error && <div style={errorStyle}>{error}</div>}
-      </div>
-    </label>
-  );
-}
-
-function CheckboxField({ label, ...fieldProps }) {
-  return (
-    <label style={fieldStyle}>
-      <span>{label}</span>
-
-      <div>
-        <input type="checkbox" {...fieldProps} />
-      </div>
-    </label>
-  );
-}
-
-function toDateOnly(value) {
-  if (!value) return "";
-  return String(value).slice(0, 10);
-}
-
-const fieldStyle = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "1rem",
-  marginBottom: "0.5rem",
-};
-
-const errorStyle = {
-  color: "#b00020",
-  fontSize: "0.85rem",
-  marginTop: "0.25rem",
-};

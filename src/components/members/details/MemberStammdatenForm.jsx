@@ -1,5 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import FormField from "../../forms/FormField";
+import SelectField from "../../forms/SelectField";
+import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
+import {
+  validateCompleteDate,
+  validateMaxLength,
+  validateRequired,
+} from "../../../utils/forms/validationHelpers";
 
 const AUTO_SAVE_DELAY_MS = 500;
 
@@ -255,12 +263,15 @@ export default function MemberStammdatenForm({
         <SelectField
           label="Anrede"
           error={errors.anrede?.message}
-          {...register("anrede")}
           options={[
             { value: "Herr", label: "Herr" },
             { value: "Frau", label: "Frau" },
             { value: "", label: "Keine Anrede" },
           ]}
+          optionValueKey="value"
+          optionLabelKey="label"
+          includePlaceholder={false}
+          {...register("anrede")}
         />
       )}
 
@@ -343,153 +354,90 @@ function validateStammdaten(values) {
   const ort = values?.ort ?? "";
   const strasseHausNr = values?.strasseHausNr ?? "";
 
-  if (!isFirma && !vorname.trim()) {
-    validationErrors.push({
-      field: "vorname",
-      message: "Vorname darf bei Personen nicht leer sein",
-    });
+  if (!isFirma) {
+    validateRequired(
+      validationErrors,
+      "vorname",
+      vorname,
+      "Vorname darf bei Personen nicht leer sein",
+    );
   }
 
-  if (!nachname.trim()) {
-    validationErrors.push({
-      field: "nachname",
-      message: isFirma ? "Firmenname ist Pflicht" : "Nachname ist Pflicht",
-    });
-  }
+  validateRequired(
+    validationErrors,
+    "nachname",
+    nachname,
+    isFirma ? "Firmenname ist Pflicht" : "Nachname ist Pflicht",
+  );
 
-  if (geburtsdatum && !isCompleteDate(geburtsdatum)) {
-    validationErrors.push({
-      field: "geburtsdatum",
-      message: "Datum muss vollständig sein",
-    });
-  }
+  validateCompleteDate(
+    validationErrors,
+    "geburtsdatum",
+    geburtsdatum,
+    "Datum muss vollständig sein",
+  );
 
-  if (vorname.length > 50) {
-    validationErrors.push({
-      field: "vorname",
-      message: isFirma
-        ? "Firmenzusatz darf maximal 50 Zeichen haben"
-        : "Vorname darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "vorname",
+    vorname,
+    50,
+    isFirma
+      ? "Firmenzusatz darf maximal 50 Zeichen haben"
+      : "Vorname darf maximal 50 Zeichen haben",
+  );
 
-  if (nachname.length > 50) {
-    validationErrors.push({
-      field: "nachname",
-      message: isFirma
-        ? "Firmenname darf maximal 50 Zeichen haben"
-        : "Nachname darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "nachname",
+    nachname,
+    50,
+    isFirma
+      ? "Firmenname darf maximal 50 Zeichen haben"
+      : "Nachname darf maximal 50 Zeichen haben",
+  );
 
-  if (anrede.length > 50) {
-    validationErrors.push({
-      field: "anrede",
-      message: "Anrede darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "anrede",
+    anrede,
+    50,
+    "Anrede darf maximal 50 Zeichen haben",
+  );
 
-  if (akademischerTitel.length > 50) {
-    validationErrors.push({
-      field: "akademischerTitel",
-      message: "Akademischer Titel darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "akademischerTitel",
+    akademischerTitel,
+    50,
+    "Akademischer Titel darf maximal 50 Zeichen haben",
+  );
 
-  if (plz.length > 50) {
-    validationErrors.push({
-      field: "plz",
-      message: "PLZ darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "plz",
+    plz,
+    50,
+    "PLZ darf maximal 50 Zeichen haben",
+  );
 
-  if (ort.length > 50) {
-    validationErrors.push({
-      field: "ort",
-      message: "Ort darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "ort",
+    ort,
+    50,
+    "Ort darf maximal 50 Zeichen haben",
+  );
 
-  if (strasseHausNr.length > 50) {
-    validationErrors.push({
-      field: "strasseHausNr",
-      message: "Straße/Hausnummer darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "strasseHausNr",
+    strasseHausNr,
+    50,
+    "Straße/Hausnummer darf maximal 50 Zeichen haben",
+  );
 
   return validationErrors;
-}
-
-function isCompleteDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function mapBackendValidationErrors(error, setError, allowedFields = null) {
-  if (!Array.isArray(error?.validationErrors)) {
-    return;
-  }
-
-  error.validationErrors.forEach((validationError) => {
-    if (!validationError?.field) {
-      return;
-    }
-
-    if (allowedFields && !allowedFields.includes(validationError.field)) {
-      return;
-    }
-
-    setError(validationError.field, {
-      type: "server",
-      message: validationError.message || "Ungültiger Wert",
-    });
-  });
-}
-
-function FormField({
-  label,
-  error,
-  type = "text",
-  required = false,
-  ...fieldProps
-}) {
-  return (
-    <label style={fieldStyle}>
-      <span>
-        {label}
-        {required ? " *" : ""}
-      </span>
-
-      <div>
-        <input
-          type={type}
-          aria-invalid={error ? "true" : "false"}
-          {...fieldProps}
-        />
-
-        {error && <div style={errorStyle}>{error}</div>}
-      </div>
-    </label>
-  );
-}
-
-function SelectField({ label, error, options, ...fieldProps }) {
-  return (
-    <label style={fieldStyle}>
-      <span>{label}</span>
-
-      <div>
-        <select aria-invalid={error ? "true" : "false"} {...fieldProps}>
-          {options.map((option) => (
-            <option key={option.value || "__empty"} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        {error && <div style={errorStyle}>{error}</div>}
-      </div>
-    </label>
-  );
 }
 
 function TitleField({ value, onChange, error }) {

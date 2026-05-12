@@ -1,5 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import CheckboxField from "../../forms/CheckboxField";
+import FormField from "../../forms/FormField";
+import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
+import { toDateOnly } from "../../../utils/forms/dateHelpers";
+import {
+  validateCompleteDate,
+  validateDateRange,
+} from "../../../utils/forms/validationHelpers";
 
 const AUTO_SAVE_DELAY_MS = 500;
 
@@ -267,163 +275,117 @@ export default function MemberChorkleidungForm({
 function createPayload(values) {
   return {
     ehemaligeStimme: values?.ehemaligeStimme ?? "",
-    uebergabeAm: values?.uebergabeAm || null,
+    uebergabeAm: toLocalDateTime(values?.uebergabeAm),
     bemerkungUebergabe: values?.bemerkungUebergabe ?? "",
     neubeschaffung: values?.neubeschaffung === true,
-    datumAnteil: values?.datumAnteil || null,
+    datumAnteil: toLocalDateTime(values?.datumAnteil),
     barzahlung: values?.barzahlung === true,
     bearbeitungsstand: values?.bearbeitungsstand ?? "",
-    rueckgabeAm: values?.rueckgabeAm || null,
+    rueckgabeAm: toLocalDateTime(values?.rueckgabeAm),
     bemerkungRueckgabe: values?.bemerkungRueckgabe ?? "",
-    kaufdatum: values?.kaufdatum || null,
+    kaufdatum: toLocalDateTime(values?.kaufdatum),
     kaufpreis:
       values?.kaufpreis === "" || values?.kaufpreis === null
         ? null
         : Number(values.kaufpreis),
     sommerkleidung: values?.sommerkleidung === true,
-    sommerkleidungErhalten: values?.sommerkleidungErhalten || null,
-    sommerkleidungRueckgabe: values?.sommerkleidungRueckgabe || null,
+    sommerkleidungErhalten: toLocalDateTime(values?.sommerkleidungErhalten),
+    sommerkleidungRueckgabe: toLocalDateTime(values?.sommerkleidungRueckgabe),
   };
 }
 
 function validateChorkleidung(values) {
   const validationErrors = [];
 
-  validateDateTimeField(validationErrors, "uebergabeAm", values?.uebergabeAm);
-  validateDateTimeField(validationErrors, "datumAnteil", values?.datumAnteil);
-  validateDateTimeField(validationErrors, "rueckgabeAm", values?.rueckgabeAm);
-  validateDateTimeField(validationErrors, "kaufdatum", values?.kaufdatum);
-  validateDateTimeField(
+  validateCompleteDate(
+    validationErrors,
+    "uebergabeAm",
+    values?.uebergabeAm,
+    "Datum muss vollständig sein",
+  );
+
+  validateCompleteDate(
+    validationErrors,
+    "datumAnteil",
+    values?.datumAnteil,
+    "Datum muss vollständig sein",
+  );
+
+  validateCompleteDate(
+    validationErrors,
+    "rueckgabeAm",
+    values?.rueckgabeAm,
+    "Datum muss vollständig sein",
+  );
+
+  validateCompleteDate(
+    validationErrors,
+    "kaufdatum",
+    values?.kaufdatum,
+    "Datum muss vollständig sein",
+  );
+
+  validateCompleteDate(
     validationErrors,
     "sommerkleidungErhalten",
     values?.sommerkleidungErhalten,
+    "Datum muss vollständig sein",
   );
-  validateDateTimeField(
+
+  validateCompleteDate(
     validationErrors,
     "sommerkleidungRueckgabe",
     values?.sommerkleidungRueckgabe,
+    "Datum muss vollständig sein",
   );
 
-  if (
-    isCompleteDate(values?.uebergabeAm) &&
-    isCompleteDate(values?.rueckgabeAm) &&
-    values.rueckgabeAm < values.uebergabeAm
-  ) {
-    validationErrors.push({
-      field: "rueckgabeAm",
-      message: "Rückgabe darf nicht vor Übergabe liegen",
-    });
-  }
+  validateDateRange(
+    validationErrors,
+    "uebergabeAm",
+    values?.uebergabeAm,
+    "rueckgabeAm",
+    values?.rueckgabeAm,
+    "Rückgabe darf nicht vor Übergabe liegen",
+  );
 
-  if (
-    isCompleteDate(values?.sommerkleidungErhalten) &&
-    isCompleteDate(values?.sommerkleidungRueckgabe) &&
-    values.sommerkleidungRueckgabe < values.sommerkleidungErhalten
-  ) {
-    validationErrors.push({
-      field: "sommerkleidungRueckgabe",
-      message: "Sommerkleidung-Rückgabe darf nicht vor Erhalt liegen",
-    });
-  }
+  validateDateRange(
+    validationErrors,
+    "sommerkleidungErhalten",
+    values?.sommerkleidungErhalten,
+    "sommerkleidungRueckgabe",
+    values?.sommerkleidungRueckgabe,
+    "Sommerkleidung-Rückgabe darf nicht vor Erhalt liegen",
+  );
 
-  if (values?.kaufpreis !== "" && values?.kaufpreis !== null) {
-    const kaufpreis = Number(values.kaufpreis);
-
-    if (Number.isNaN(kaufpreis)) {
-      validationErrors.push({
-        field: "kaufpreis",
-        message: "Kaufpreis muss eine Zahl sein",
-      });
-    } else if (kaufpreis < 0) {
-      validationErrors.push({
-        field: "kaufpreis",
-        message: "Kaufpreis darf nicht negativ sein",
-      });
-    }
-  }
+  validateKaufpreis(validationErrors, values?.kaufpreis);
 
   return validationErrors;
 }
 
-function validateDateTimeField(validationErrors, field, value) {
-  if (value && !isCompleteDate(value)) {
-    validationErrors.push({
-      field,
-      message: "Datum muss vollständig sein",
-    });
-  }
-}
-
-function isCompleteDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value ?? "");
-}
-
-function mapBackendValidationErrors(error, setError, allowedFields = null) {
-  if (!Array.isArray(error?.validationErrors)) {
+function validateKaufpreis(validationErrors, value) {
+  if (value === "" || value === null || value === undefined) {
     return;
   }
 
-  error.validationErrors.forEach((validationError) => {
-    if (!validationError?.field) {
-      return;
-    }
+  const kaufpreis = Number(value);
 
-    if (allowedFields && !allowedFields.includes(validationError.field)) {
-      return;
-    }
-
-    setError(validationError.field, {
-      type: "server",
-      message: validationError.message || "Ungültiger Wert",
+  if (Number.isNaN(kaufpreis)) {
+    validationErrors.push({
+      field: "kaufpreis",
+      message: "Kaufpreis muss eine Zahl sein",
     });
-  });
+
+    return;
+  }
+
+  if (kaufpreis < 0) {
+    validationErrors.push({
+      field: "kaufpreis",
+      message: "Kaufpreis darf nicht negativ sein",
+    });
+  }
 }
 
-function FormField({ label, error, type = "text", ...fieldProps }) {
-  return (
-    <label style={fieldStyle}>
-      <span>{label}</span>
-
-      <div>
-        <input
-          type={type}
-          aria-invalid={error ? "true" : "false"}
-          {...fieldProps}
-        />
-
-        {error && <div style={errorStyle}>{error}</div>}
-      </div>
-    </label>
-  );
+function toLocalDateTime(value) {
+  return value ? `${value}T00:00:00` : null;
 }
-
-function CheckboxField({ label, ...fieldProps }) {
-  return (
-    <label style={fieldStyle}>
-      <span>{label}</span>
-
-      <div>
-        <input type="checkbox" {...fieldProps} />
-      </div>
-    </label>
-  );
-}
-
-function toDateOnly(value) {
-  if (!value) return "";
-  return String(value).slice(0, 10);
-}
-
-const fieldStyle = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "1rem",
-  marginBottom: "0.5rem",
-};
-
-const errorStyle = {
-  color: "#b00020",
-  fontSize: "0.85rem",
-  marginTop: "0.25rem",
-};

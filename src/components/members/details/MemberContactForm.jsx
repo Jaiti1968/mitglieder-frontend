@@ -1,5 +1,11 @@
 import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import FormField from "../../forms/FormField";
+import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
+import {
+  validateEmail,
+  validateMaxLength,
+} from "../../../utils/forms/validationHelpers";
 
 const AUTO_SAVE_DELAY_MS = 500;
 
@@ -63,7 +69,6 @@ export default function MemberContactForm({
   });
 
   const values = useWatch({ control });
-
   const valuesSignature = JSON.stringify(values);
 
   useEffect(() => {
@@ -209,82 +214,28 @@ function createPayload(values) {
 function validateKontakt(values) {
   const validationErrors = [];
 
-  const email = values.email ?? "";
-  const adresszusatz = values.adresszusatz ?? "";
+  validateMaxLength(
+    validationErrors,
+    "email",
+    values.email,
+    100,
+    "E-Mail darf maximal 100 Zeichen haben",
+  );
 
-  if (email.length > 100) {
-    validationErrors.push({
-      field: "email",
-      message: "E-Mail darf maximal 100 Zeichen haben",
-    });
-  }
+  validateEmail(
+    validationErrors,
+    "email",
+    values.email,
+    "Bitte eine gültige E-Mail-Adresse eingeben",
+  );
 
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    validationErrors.push({
-      field: "email",
-      message: "Bitte eine gültige E-Mail-Adresse eingeben",
-    });
-  }
-
-  if (adresszusatz.length > 50) {
-    validationErrors.push({
-      field: "adresszusatz",
-      message: "Adresszusatz darf maximal 50 Zeichen haben",
-    });
-  }
+  validateMaxLength(
+    validationErrors,
+    "adresszusatz",
+    values.adresszusatz,
+    50,
+    "Adresszusatz darf maximal 50 Zeichen haben",
+  );
 
   return validationErrors;
 }
-
-function mapBackendValidationErrors(error, setError, allowedFields = null) {
-  if (!Array.isArray(error?.validationErrors)) {
-    return;
-  }
-
-  error.validationErrors.forEach((validationError) => {
-    if (!validationError?.field) {
-      return;
-    }
-
-    if (allowedFields && !allowedFields.includes(validationError.field)) {
-      return;
-    }
-
-    setError(validationError.field, {
-      type: "server",
-      message: validationError.message || "Ungültiger Wert",
-    });
-  });
-}
-
-function FormField({ label, error, type = "text", ...fieldProps }) {
-  return (
-    <label style={fieldStyle}>
-      <span>{label}</span>
-
-      <div>
-        <input
-          type={type}
-          aria-invalid={error ? "true" : "false"}
-          {...fieldProps}
-        />
-
-        {error && <div style={errorStyle}>{error}</div>}
-      </div>
-    </label>
-  );
-}
-
-const fieldStyle = {
-  display: "grid",
-  gridTemplateColumns: "minmax(0, 180px) minmax(0, 1fr)",
-  alignItems: "center",
-  gap: "1rem",
-  marginBottom: "0.5rem",
-};
-
-const errorStyle = {
-  color: "#b00020",
-  fontSize: "0.85rem",
-  marginTop: "0.25rem",
-};
