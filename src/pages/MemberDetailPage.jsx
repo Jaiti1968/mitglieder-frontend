@@ -195,6 +195,11 @@ export default function MemberDetailPage() {
   const mitgliedschaft = member.mitgliedschaft ?? {};
   const backTarget = `/members${location.search}`;
 
+  const savedStyle = {
+    color: "#2e7d32",
+    fontWeight: 600,
+  };
+
   return (
     <main>
       <UnsavedChangesDialog
@@ -215,6 +220,10 @@ export default function MemberDetailPage() {
 
       <div className="autosave-status">
         {autoSaveStatus.isSaving && <span>Speichere Änderungen...</span>}
+
+        {!autoSaveStatus.isSaving && autoSaveStatus.hasSaved && (
+          <span style={savedStyle}>✔ Gespeichert</span>
+        )}
 
         {autoSaveStatus.hasSaveError && (
           <ErrorBox message="Speichern fehlgeschlagen. Bitte die Seite nicht verlassen." />
