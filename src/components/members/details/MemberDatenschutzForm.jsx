@@ -1,15 +1,12 @@
-import { useEffect, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
 import FormField from "../../forms/FormField";
-import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
-import { toDateOnly } from "../../../utils/forms/dateHelpers";
+import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import {
   validateCompleteDate,
   validateNotFutureDate,
 } from "../../../utils/forms/validationHelpers";
-
-const AUTO_SAVE_DELAY_MS = 500;
 
 export default function MemberDatenschutzForm({
   datenschutz = {},
@@ -17,35 +14,10 @@ export default function MemberDatenschutzForm({
   onAutoSaveStart,
   onAutoSaveSuccess,
   onAutoSaveError,
+  onValidationError,
   serverError,
   onClearServerError,
 }) {
-  const isFirstRender = useRef(true);
-
-  const callbacksRef = useRef({
-    onChange,
-    onAutoSaveStart,
-    onAutoSaveSuccess,
-    onAutoSaveError,
-    onClearServerError,
-  });
-
-  useEffect(() => {
-    callbacksRef.current = {
-      onChange,
-      onAutoSaveStart,
-      onAutoSaveSuccess,
-      onAutoSaveError,
-      onClearServerError,
-    };
-  }, [
-    onChange,
-    onAutoSaveStart,
-    onAutoSaveSuccess,
-    onAutoSaveError,
-    onClearServerError,
-  ]);
-
   const {
     register,
     control,
@@ -65,95 +37,42 @@ export default function MemberDatenschutzForm({
     },
   });
 
-  const values = useWatch({ control });
-  const valuesSignature = JSON.stringify(values);
-
   useEffect(() => {
     reset({
-      datumDatenschutz: toDateOnly(datenschutz?.datumDatenschutz),
+      datumDatenschutz: datenschutz?.datumDatenschutz ?? "",
       datenschutzNr14: datenschutz?.datenschutzNr14 ?? false,
       datenschutzNr15: datenschutz?.datenschutzNr15 ?? false,
       datenschutzNr16: datenschutz?.datenschutzNr16 ?? false,
       datenschutzNr17: datenschutz?.datenschutzNr17 ?? false,
       datenschutzNr18: datenschutz?.datenschutzNr18 ?? false,
     });
-
-    isFirstRender.current = true;
   }, [datenschutz, reset]);
 
-  useEffect(() => {
-    mapBackendValidationErrors(serverError, setError, [
+  useAutoSaveForm({
+    control,
+    isDirty,
+    setError,
+    clearErrors,
+    onChange,
+    onAutoSaveStart,
+    onAutoSaveSuccess,
+    onAutoSaveError,
+    onValidationError,
+    onClearServerError,
+    serverError,
+    allowedServerFields: [
       "datumDatenschutz",
       "datenschutzNr14",
       "datenschutzNr15",
       "datenschutzNr16",
       "datenschutzNr17",
       "datenschutzNr18",
-    ]);
-  }, [serverError, setError]);
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (!isDirty) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        const clientValidationErrors = validateDatenschutz(values);
-
-        if (clientValidationErrors.length > 0) {
-          clearErrors();
-
-          clientValidationErrors.forEach((validationError) => {
-            setError(validationError.field, {
-              type: "client",
-              message: validationError.message,
-            });
-          });
-
-          return;
-        }
-
-        callbacksRef.current.onClearServerError?.();
-        clearErrors();
-
-        callbacksRef.current.onAutoSaveStart?.();
-
-        const payload = createPayload(values);
-        const result = callbacksRef.current.onChange?.(payload);
-
-        if (result instanceof Promise) {
-          await result;
-        }
-
-        callbacksRef.current.onAutoSaveSuccess?.();
-      } catch (error) {
-        console.error("Auto-Save Datenschutz fehlgeschlagen:", error);
-
-        const hasValidationErrors =
-          Array.isArray(error?.validationErrors) &&
-          error.validationErrors.length > 0;
-
-        mapBackendValidationErrors(error, setError);
-
-        if (hasValidationErrors) {
-          return;
-        }
-
-        callbacksRef.current.onAutoSaveError?.();
-      }
-    }, AUTO_SAVE_DELAY_MS);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valuesSignature, isDirty, clearErrors, setError]);
+    ],
+    validate: validateDatenschutz,
+    buildPayload: createPayload,
+    resetDependencies: [datenschutz],
+    errorLogLabel: "Auto-Save Datenschutz",
+  });
 
   return (
     <form noValidate>
@@ -195,9 +114,7 @@ export default function MemberDatenschutzForm({
 
 function createPayload(values) {
   return {
-    datumDatenschutz: values?.datumDatenschutz
-      ? `${values.datumDatenschutz}T00:00:00`
-      : null,
+    datumDatenschutz: values?.datumDatenschutz || null,
     datenschutzNr14: values?.datenschutzNr14 === true,
     datenschutzNr15: values?.datenschutzNr15 === true,
     datenschutzNr16: values?.datenschutzNr16 === true,

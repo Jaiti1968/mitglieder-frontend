@@ -1,13 +1,16 @@
 export function isCompleteDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value ?? "");
-}
-
-export function toDateOnly(value) {
-  if (!value) {
-    return "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? "")) {
+    return false;
   }
 
-  return String(value).slice(0, 10);
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
 }
 
 export function isDateBefore(firstDate, secondDate) {
@@ -23,8 +26,6 @@ export function isDateInFuture(value) {
     return false;
   }
 
-  const selectedDate = new Date(value);
-  const now = new Date();
-
-  return selectedDate > now;
+  const today = new Date().toISOString().slice(0, 10);
+  return value > today;
 }

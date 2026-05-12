@@ -1,15 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import FormField from "../../forms/FormField";
 import SelectField from "../../forms/SelectField";
-import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
+import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import {
   validateCompleteDate,
   validateMaxLength,
   validateRequired,
 } from "../../../utils/forms/validationHelpers";
-
-const AUTO_SAVE_DELAY_MS = 500;
 
 export default function MemberStammdatenForm({
   stammdaten = {},
@@ -17,36 +15,10 @@ export default function MemberStammdatenForm({
   onAutoSaveStart,
   onAutoSaveSuccess,
   onAutoSaveError,
+  onValidationError,
   serverError,
   onClearServerError,
 }) {
-  const isFirstRender = useRef(true);
-  const lastValidationSignature = useRef("");
-
-  const callbacksRef = useRef({
-    onChange,
-    onAutoSaveStart,
-    onAutoSaveSuccess,
-    onAutoSaveError,
-    onClearServerError,
-  });
-
-  useEffect(() => {
-    callbacksRef.current = {
-      onChange,
-      onAutoSaveStart,
-      onAutoSaveSuccess,
-      onAutoSaveError,
-      onClearServerError,
-    };
-  }, [
-    onChange,
-    onAutoSaveStart,
-    onAutoSaveSuccess,
-    onAutoSaveError,
-    onClearServerError,
-  ]);
-
   const {
     register,
     control,
@@ -71,7 +43,6 @@ export default function MemberStammdatenForm({
   });
 
   const values = useWatch({ control });
-  const valuesSignature = JSON.stringify(values);
   const isFirma = values?.personFirma === true;
 
   useEffect(() => {
@@ -86,13 +57,21 @@ export default function MemberStammdatenForm({
       ort: stammdaten?.ort ?? "",
       strasseHausNr: stammdaten?.strasseHausNr ?? "",
     });
-
-    isFirstRender.current = true;
-    lastValidationSignature.current = "";
   }, [stammdaten, reset]);
 
-  useEffect(() => {
-    mapBackendValidationErrors(serverError, setError, [
+  useAutoSaveForm({
+    control,
+    isDirty,
+    setError,
+    clearErrors,
+    onChange,
+    onAutoSaveStart,
+    onAutoSaveSuccess,
+    onAutoSaveError,
+    onValidationError,
+    onClearServerError,
+    serverError,
+    allowedServerFields: [
       "personFirma",
       "anrede",
       "akademischerTitel",
@@ -102,107 +81,15 @@ export default function MemberStammdatenForm({
       "plz",
       "ort",
       "strasseHausNr",
-    ]);
-  }, [serverError, setError]);
-
-  useEffect(() => {
-    if (isFirma) {
-      setValue("anrede", "", {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-
-      setValue("akademischerTitel", "", {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-
-      setValue("geburtsdatum", "", {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
-    }
-  }, [isFirma, setValue]);
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (!isDirty) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        const clientValidationErrors = validateStammdaten(values);
-        const validationSignature = JSON.stringify(clientValidationErrors);
-
-        if (clientValidationErrors.length > 0) {
-          clearErrors();
-
-          clientValidationErrors.forEach((validationError) => {
-            setError(validationError.field, {
-              type: "client",
-              message: validationError.message,
-            });
-          });
-
-          lastValidationSignature.current = validationSignature;
-          return;
-        }
-
-        lastValidationSignature.current = "";
-
-        callbacksRef.current.onClearServerError?.();
-        clearErrors();
-
-        callbacksRef.current.onAutoSaveStart?.();
-
-        const payload = createPayload(values);
-        const result = callbacksRef.current.onChange?.(payload);
-
-        if (result instanceof Promise) {
-          await result;
-        }
-
-        callbacksRef.current.onAutoSaveSuccess?.();
-      } catch (error) {
-        console.error("Auto-Save Stammdaten fehlgeschlagen:", error);
-
-        const hasValidationErrors =
-          Array.isArray(error?.validationErrors) &&
-          error.validationErrors.length > 0;
-
-        mapBackendValidationErrors(error, setError);
-
-        if (hasValidationErrors) {
-          return;
-        }
-
-        callbacksRef.current.onAutoSaveError?.();
-      }
-    }, AUTO_SAVE_DELAY_MS);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-    // Wichtig: values ist bewusst nicht in den Dependencies.
-    // valuesSignature steuert den Effekt stabil und verhindert Autosave-Loops.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valuesSignature, isDirty, clearErrors, setError]);
+    ],
+    validate: validateStammdaten,
+    buildPayload: createPayload,
+    resetDependencies: [stammdaten],
+    errorLogLabel: "Auto-Save Stammdaten",
+  });
 
   function handleTypeChange(type) {
     const nextIsFirma = type === "firma";
-
-    const nextValues = {
-      ...values,
-      personFirma: nextIsFirma,
-      anrede: nextIsFirma ? "" : values.anrede,
-      akademischerTitel: nextIsFirma ? "" : values.akademischerTitel,
-      geburtsdatum: nextIsFirma ? "" : values.geburtsdatum,
-    };
 
     setValue("personFirma", nextIsFirma, {
       shouldDirty: true,
@@ -225,8 +112,6 @@ export default function MemberStammdatenForm({
         shouldValidate: true,
       });
     }
-
-    callbacksRef.current.onChange?.(createPayload(nextValues));
   }
 
   return (
@@ -326,15 +211,14 @@ export default function MemberStammdatenForm({
 
 function createPayload(values) {
   return {
-    ...values,
     personFirma: values?.personFirma === true,
     anrede: values?.personFirma ? "" : (values?.anrede ?? ""),
     akademischerTitel: values?.personFirma
       ? ""
       : (values?.akademischerTitel ?? ""),
-    geburtsdatum: values?.personFirma ? "" : (values?.geburtsdatum ?? ""),
     vorname: values?.vorname ?? "",
     nachname: values?.nachname ?? "",
+    geburtsdatum: values?.personFirma ? "" : (values?.geburtsdatum ?? ""),
     plz: values?.plz ?? "",
     ort: values?.ort ?? "",
     strasseHausNr: values?.strasseHausNr ?? "",
@@ -370,12 +254,14 @@ function validateStammdaten(values) {
     isFirma ? "Firmenname ist Pflicht" : "Nachname ist Pflicht",
   );
 
-  validateCompleteDate(
-    validationErrors,
-    "geburtsdatum",
-    geburtsdatum,
-    "Datum muss vollständig sein",
-  );
+  if (!isFirma) {
+    validateCompleteDate(
+      validationErrors,
+      "geburtsdatum",
+      geburtsdatum,
+      "Datum muss vollständig sein",
+    );
+  }
 
   validateMaxLength(
     validationErrors,

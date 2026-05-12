@@ -1,15 +1,13 @@
-import { useEffect, useRef } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useEffect } from "react";
+import { Controller, useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
 import FormField from "../../forms/FormField";
-import { mapBackendValidationErrors } from "../../../utils/forms/backendErrorMapper";
-import { toDateOnly } from "../../../utils/forms/dateHelpers";
+import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import {
   validateCompleteDate,
   validateDateRange,
+  validateNotFutureDate,
 } from "../../../utils/forms/validationHelpers";
-
-const AUTO_SAVE_DELAY_MS = 500;
 
 export default function MemberChorkleidungForm({
   chorkleidung = {},
@@ -17,35 +15,10 @@ export default function MemberChorkleidungForm({
   onAutoSaveStart,
   onAutoSaveSuccess,
   onAutoSaveError,
+  onValidationError,
   serverError,
   onClearServerError,
 }) {
-  const isFirstRender = useRef(true);
-
-  const callbacksRef = useRef({
-    onChange,
-    onAutoSaveStart,
-    onAutoSaveSuccess,
-    onAutoSaveError,
-    onClearServerError,
-  });
-
-  useEffect(() => {
-    callbacksRef.current = {
-      onChange,
-      onAutoSaveStart,
-      onAutoSaveSuccess,
-      onAutoSaveError,
-      onClearServerError,
-    };
-  }, [
-    onChange,
-    onAutoSaveStart,
-    onAutoSaveSuccess,
-    onAutoSaveError,
-    onClearServerError,
-  ]);
-
   const {
     register,
     control,
@@ -73,34 +46,38 @@ export default function MemberChorkleidungForm({
     },
   });
 
-  const values = useWatch({ control });
-  const valuesSignature = JSON.stringify(values);
-
   useEffect(() => {
     reset({
       ehemaligeStimme: chorkleidung?.ehemaligeStimme ?? "",
-      uebergabeAm: toDateOnly(chorkleidung?.uebergabeAm),
+      uebergabeAm: chorkleidung?.uebergabeAm ?? "",
       bemerkungUebergabe: chorkleidung?.bemerkungUebergabe ?? "",
       neubeschaffung: chorkleidung?.neubeschaffung ?? false,
-      datumAnteil: toDateOnly(chorkleidung?.datumAnteil),
+      datumAnteil: chorkleidung?.datumAnteil ?? "",
       barzahlung: chorkleidung?.barzahlung ?? false,
       bearbeitungsstand: chorkleidung?.bearbeitungsstand ?? "",
-      rueckgabeAm: toDateOnly(chorkleidung?.rueckgabeAm),
+      rueckgabeAm: chorkleidung?.rueckgabeAm ?? "",
       bemerkungRueckgabe: chorkleidung?.bemerkungRueckgabe ?? "",
-      kaufdatum: toDateOnly(chorkleidung?.kaufdatum),
-      kaufpreis: chorkleidung?.kaufpreis ?? "",
+      kaufdatum: chorkleidung?.kaufdatum ?? "",
+      kaufpreis: formatKaufpreis(chorkleidung?.kaufpreis),
       sommerkleidung: chorkleidung?.sommerkleidung ?? false,
-      sommerkleidungErhalten: toDateOnly(chorkleidung?.sommerkleidungErhalten),
-      sommerkleidungRueckgabe: toDateOnly(
-        chorkleidung?.sommerkleidungRueckgabe,
-      ),
+      sommerkleidungErhalten: chorkleidung?.sommerkleidungErhalten ?? "",
+      sommerkleidungRueckgabe: chorkleidung?.sommerkleidungRueckgabe ?? "",
     });
-
-    isFirstRender.current = true;
   }, [chorkleidung, reset]);
 
-  useEffect(() => {
-    mapBackendValidationErrors(serverError, setError, [
+  useAutoSaveForm({
+    control,
+    isDirty,
+    setError,
+    clearErrors,
+    onChange,
+    onAutoSaveStart,
+    onAutoSaveSuccess,
+    onAutoSaveError,
+    onValidationError,
+    onClearServerError,
+    serverError,
+    allowedServerFields: [
       "ehemaligeStimme",
       "uebergabeAm",
       "bemerkungUebergabe",
@@ -115,71 +92,13 @@ export default function MemberChorkleidungForm({
       "sommerkleidung",
       "sommerkleidungErhalten",
       "sommerkleidungRueckgabe",
-    ]);
-  }, [serverError, setError]);
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (!isDirty) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        const clientValidationErrors = validateChorkleidung(values);
-
-        if (clientValidationErrors.length > 0) {
-          clearErrors();
-
-          clientValidationErrors.forEach((validationError) => {
-            setError(validationError.field, {
-              type: "client",
-              message: validationError.message,
-            });
-          });
-
-          return;
-        }
-
-        callbacksRef.current.onClearServerError?.();
-        clearErrors();
-
-        callbacksRef.current.onAutoSaveStart?.();
-
-        const payload = createPayload(values);
-        const result = callbacksRef.current.onChange?.(payload);
-
-        if (result instanceof Promise) {
-          await result;
-        }
-
-        callbacksRef.current.onAutoSaveSuccess?.();
-      } catch (error) {
-        console.error("Auto-Save Chorkleidung fehlgeschlagen:", error);
-
-        const hasValidationErrors =
-          Array.isArray(error?.validationErrors) &&
-          error.validationErrors.length > 0;
-
-        mapBackendValidationErrors(error, setError);
-
-        if (hasValidationErrors) {
-          return;
-        }
-
-        callbacksRef.current.onAutoSaveError?.();
-      }
-    }, AUTO_SAVE_DELAY_MS);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [valuesSignature, isDirty, clearErrors, setError]);
+    ],
+    validate: validateChorkleidung,
+    buildPayload: createPayload,
+    resetDependencies: [chorkleidung],
+    debounceMs: 1500,
+    errorLogLabel: "Auto-Save Chorkleidung",
+  });
 
   return (
     <form noValidate>
@@ -243,12 +162,25 @@ export default function MemberChorkleidungForm({
         {...register("kaufdatum")}
       />
 
-      <FormField
-        label="Kaufpreis"
-        type="text"
-        placeholder="0.00"
-        error={errors.kaufpreis?.message}
-        {...register("kaufpreis")}
+      <Controller
+        name="kaufpreis"
+        control={control}
+        render={({ field }) => (
+          <FormField
+            label="Kaufpreis (€)"
+            type="text"
+            placeholder="0,00"
+            error={errors.kaufpreis?.message}
+            value={field.value ?? ""}
+            onChange={(event) => field.onChange(event.target.value)}
+            onBlur={() => {
+              field.onChange(formatKaufpreis(field.value));
+              field.onBlur();
+            }}
+            name={field.name}
+            ref={field.ref}
+          />
+        )}
       />
 
       <CheckboxField label="Sommerkleidung" {...register("sommerkleidung")} />
@@ -275,22 +207,19 @@ export default function MemberChorkleidungForm({
 function createPayload(values) {
   return {
     ehemaligeStimme: values?.ehemaligeStimme ?? "",
-    uebergabeAm: toLocalDateTime(values?.uebergabeAm),
+    uebergabeAm: values?.uebergabeAm || null,
     bemerkungUebergabe: values?.bemerkungUebergabe ?? "",
     neubeschaffung: values?.neubeschaffung === true,
-    datumAnteil: toLocalDateTime(values?.datumAnteil),
+    datumAnteil: values?.datumAnteil || null,
     barzahlung: values?.barzahlung === true,
     bearbeitungsstand: values?.bearbeitungsstand ?? "",
-    rueckgabeAm: toLocalDateTime(values?.rueckgabeAm),
+    rueckgabeAm: values?.rueckgabeAm || null,
     bemerkungRueckgabe: values?.bemerkungRueckgabe ?? "",
-    kaufdatum: toLocalDateTime(values?.kaufdatum),
-    kaufpreis:
-      values?.kaufpreis === "" || values?.kaufpreis === null
-        ? null
-        : Number(values.kaufpreis),
+    kaufdatum: values?.kaufdatum || null,
+    kaufpreis: parseKaufpreis(values?.kaufpreis),
     sommerkleidung: values?.sommerkleidung === true,
-    sommerkleidungErhalten: toLocalDateTime(values?.sommerkleidungErhalten),
-    sommerkleidungRueckgabe: toLocalDateTime(values?.sommerkleidungRueckgabe),
+    sommerkleidungErhalten: values?.sommerkleidungErhalten || null,
+    sommerkleidungRueckgabe: values?.sommerkleidungRueckgabe || null,
   };
 }
 
@@ -303,40 +232,48 @@ function validateChorkleidung(values) {
     values?.uebergabeAm,
     "Datum muss vollständig sein",
   );
-
   validateCompleteDate(
     validationErrors,
     "datumAnteil",
     values?.datumAnteil,
     "Datum muss vollständig sein",
   );
-
   validateCompleteDate(
     validationErrors,
     "rueckgabeAm",
     values?.rueckgabeAm,
     "Datum muss vollständig sein",
   );
-
   validateCompleteDate(
     validationErrors,
     "kaufdatum",
     values?.kaufdatum,
     "Datum muss vollständig sein",
   );
-
   validateCompleteDate(
     validationErrors,
     "sommerkleidungErhalten",
     values?.sommerkleidungErhalten,
     "Datum muss vollständig sein",
   );
-
   validateCompleteDate(
     validationErrors,
     "sommerkleidungRueckgabe",
     values?.sommerkleidungRueckgabe,
     "Datum muss vollständig sein",
+  );
+
+  validateNotFutureDate(
+    validationErrors,
+    "uebergabeAm",
+    values?.uebergabeAm,
+    "Übergabe am darf nicht in der Zukunft liegen",
+  );
+  validateNotFutureDate(
+    validationErrors,
+    "sommerkleidungErhalten",
+    values?.sommerkleidungErhalten,
+    "Sommerkleidung erhalten darf nicht in der Zukunft liegen",
   );
 
   validateDateRange(
@@ -347,7 +284,6 @@ function validateChorkleidung(values) {
     values?.rueckgabeAm,
     "Rückgabe darf nicht vor Übergabe liegen",
   );
-
   validateDateRange(
     validationErrors,
     "sommerkleidungErhalten",
@@ -367,14 +303,13 @@ function validateKaufpreis(validationErrors, value) {
     return;
   }
 
-  const kaufpreis = Number(value);
+  const kaufpreis = parseKaufpreis(value);
 
-  if (Number.isNaN(kaufpreis)) {
+  if (kaufpreis === null || Number.isNaN(kaufpreis)) {
     validationErrors.push({
       field: "kaufpreis",
       message: "Kaufpreis muss eine Zahl sein",
     });
-
     return;
   }
 
@@ -386,6 +321,27 @@ function validateKaufpreis(validationErrors, value) {
   }
 }
 
-function toLocalDateTime(value) {
-  return value ? `${value}T00:00:00` : null;
+function parseKaufpreis(value) {
+  if (value === "" || value === null || value === undefined) {
+    return null;
+  }
+
+  const normalizedValue = String(value).trim().replace(",", ".");
+  const parsedValue = Number(normalizedValue);
+
+  return Number.isNaN(parsedValue) ? NaN : parsedValue;
+}
+
+function formatKaufpreis(value) {
+  if (value === "" || value === null || value === undefined) {
+    return "";
+  }
+
+  const parsedValue = parseKaufpreis(value);
+
+  if (parsedValue === null || Number.isNaN(parsedValue)) {
+    return value;
+  }
+
+  return parsedValue.toFixed(2).replace(".", ",");
 }
