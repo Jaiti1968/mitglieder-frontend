@@ -29,7 +29,7 @@
 
 - [x] gemeinsame DateField-Komponente
 - [ ] TitleField aus MemberStammdatenForm extrahieren
-- [ ] Validator Unit Tests
+- [x] Validator Unit Tests
 - [ ] Payload/Validator-Konstanten zentralisieren (nur wenn sinnvoll)
 
 ## Zukunft / größere Features
