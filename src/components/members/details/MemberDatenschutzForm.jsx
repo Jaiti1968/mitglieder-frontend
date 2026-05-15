@@ -5,6 +5,7 @@ import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateDatenschutz } from "../../../utils/forms/validators";
 import { createDatenschutzPayload } from "../../../utils/forms/payloads";
+import { createDatenschutzDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberDatenschutzForm({
   datenschutz = {},
@@ -25,25 +26,11 @@ export default function MemberDatenschutzForm({
     formState: { errors, isDirty },
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      datumDatenschutz: "",
-      datenschutzNr14: false,
-      datenschutzNr15: false,
-      datenschutzNr16: false,
-      datenschutzNr17: false,
-      datenschutzNr18: false,
-    },
+    defaultValues: createDatenschutzDefaults(),
   });
 
   useEffect(() => {
-    reset({
-      datumDatenschutz: datenschutz?.datumDatenschutz ?? "",
-      datenschutzNr14: datenschutz?.datenschutzNr14 ?? false,
-      datenschutzNr15: datenschutz?.datenschutzNr15 ?? false,
-      datenschutzNr16: datenschutz?.datenschutzNr16 ?? false,
-      datenschutzNr17: datenschutz?.datenschutzNr17 ?? false,
-      datenschutzNr18: datenschutz?.datenschutzNr18 ?? false,
-    });
+    reset(createDatenschutzDefaults(datenschutz));
   }, [datenschutz, reset]);
 
   useAutoSaveForm({

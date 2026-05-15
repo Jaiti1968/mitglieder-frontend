@@ -23,7 +23,7 @@ export default function LoginPage() {
 
       // Kein Backend-Check → direkt weiter
       navigate("/members");
-    } catch (error) {
+    } catch {
       setErrorMessage("Login fehlgeschlagen.");
     } finally {
       setIsLoggingIn(false);

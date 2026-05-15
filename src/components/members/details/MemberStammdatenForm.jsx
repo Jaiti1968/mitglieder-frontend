@@ -5,6 +5,7 @@ import SelectField from "../../forms/SelectField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateStammdaten } from "../../../utils/forms/validators";
 import { createStammdatenPayload } from "../../../utils/forms/payloads";
+import { createStammdatenDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberStammdatenForm({
   stammdaten = {},
@@ -26,34 +27,14 @@ export default function MemberStammdatenForm({
     formState: { errors, isDirty },
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      personFirma: false,
-      anrede: "Herr",
-      akademischerTitel: "",
-      vorname: "",
-      nachname: "",
-      geburtsdatum: "",
-      plz: "",
-      ort: "",
-      strasseHausNr: "",
-    },
+    defaultValues: createStammdatenDefaults(),
   });
 
   const values = useWatch({ control });
   const isFirma = values?.personFirma === true;
 
   useEffect(() => {
-    reset({
-      personFirma: stammdaten?.personFirma ?? false,
-      anrede: stammdaten?.anrede ?? "Herr",
-      akademischerTitel: stammdaten?.akademischerTitel ?? "",
-      vorname: stammdaten?.vorname ?? "",
-      nachname: stammdaten?.nachname ?? "",
-      geburtsdatum: stammdaten?.geburtsdatum ?? "",
-      plz: stammdaten?.plz ?? "",
-      ort: stammdaten?.ort ?? "",
-      strasseHausNr: stammdaten?.strasseHausNr ?? "",
-    });
+    reset(createStammdatenDefaults(stammdaten));
   }, [stammdaten, reset]);
 
   useAutoSaveForm({

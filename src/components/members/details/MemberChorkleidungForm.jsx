@@ -8,6 +8,7 @@ import {
   createChorkleidungPayload,
   formatKaufpreis,
 } from "../../../utils/forms/payloads";
+import { createChorkleidungDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberChorkleidungForm({
   chorkleidung = {},
@@ -28,41 +29,11 @@ export default function MemberChorkleidungForm({
     formState: { errors, isDirty },
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      ehemaligeStimme: "",
-      uebergabeAm: "",
-      bemerkungUebergabe: "",
-      neubeschaffung: false,
-      datumAnteil: "",
-      barzahlung: false,
-      bearbeitungsstand: "",
-      rueckgabeAm: "",
-      bemerkungRueckgabe: "",
-      kaufdatum: "",
-      kaufpreis: "",
-      sommerkleidung: false,
-      sommerkleidungErhalten: "",
-      sommerkleidungRueckgabe: "",
-    },
+    defaultValues: createChorkleidungDefaults(),
   });
 
   useEffect(() => {
-    reset({
-      ehemaligeStimme: chorkleidung?.ehemaligeStimme ?? "",
-      uebergabeAm: chorkleidung?.uebergabeAm ?? "",
-      bemerkungUebergabe: chorkleidung?.bemerkungUebergabe ?? "",
-      neubeschaffung: chorkleidung?.neubeschaffung ?? false,
-      datumAnteil: chorkleidung?.datumAnteil ?? "",
-      barzahlung: chorkleidung?.barzahlung ?? false,
-      bearbeitungsstand: chorkleidung?.bearbeitungsstand ?? "",
-      rueckgabeAm: chorkleidung?.rueckgabeAm ?? "",
-      bemerkungRueckgabe: chorkleidung?.bemerkungRueckgabe ?? "",
-      kaufdatum: chorkleidung?.kaufdatum ?? "",
-      kaufpreis: formatKaufpreis(chorkleidung?.kaufpreis),
-      sommerkleidung: chorkleidung?.sommerkleidung ?? false,
-      sommerkleidungErhalten: chorkleidung?.sommerkleidungErhalten ?? "",
-      sommerkleidungRueckgabe: chorkleidung?.sommerkleidungRueckgabe ?? "",
-    });
+    reset(createChorkleidungDefaults(chorkleidung));
   }, [chorkleidung, reset]);
 
   useAutoSaveForm({

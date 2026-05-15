@@ -4,6 +4,7 @@ import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateKontakt } from "../../../utils/forms/validators";
 import { createKontaktPayload } from "../../../utils/forms/payloads";
+import { createKontaktDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberContactForm({
   kontakt = {},
@@ -24,25 +25,11 @@ export default function MemberContactForm({
     formState: { errors, isDirty },
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      telefonPrivat: "",
-      telefonGeschaeftlich: "",
-      mobiltelefon: "",
-      email: "",
-      adresszusatz: "",
-      briefanrede: "",
-    },
+    defaultValues: createKontaktDefaults(),
   });
 
   useEffect(() => {
-    reset({
-      telefonPrivat: kontakt?.telefonPrivat ?? "",
-      telefonGeschaeftlich: kontakt?.telefonGeschaeftlich ?? "",
-      mobiltelefon: kontakt?.mobiltelefon ?? "",
-      email: kontakt?.email ?? "",
-      adresszusatz: kontakt?.adresszusatz ?? "",
-      briefanrede: kontakt?.briefanrede ?? "",
-    });
+    reset(createKontaktDefaults(kontakt));
   }, [kontakt, reset]);
 
   useAutoSaveForm({

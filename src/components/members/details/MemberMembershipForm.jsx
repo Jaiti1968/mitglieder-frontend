@@ -6,6 +6,7 @@ import SelectField from "../../forms/SelectField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateMitgliedschaft } from "../../../utils/forms/validators";
 import { createMitgliedschaftPayload } from "../../../utils/forms/payloads";
+import { createMitgliedschaftDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberMembershipForm({
   mitgliedschaft = {},
@@ -28,23 +29,11 @@ export default function MemberMembershipForm({
     formState: { errors, isDirty },
   } = useForm({
     mode: "onChange",
-    defaultValues: {
-      eintritt: "",
-      austritt: "",
-      mitgliedsstatusId: "",
-      stimmeId: "",
-      kammerchor: false,
-    },
+    defaultValues: createMitgliedschaftDefaults(),
   });
 
   useEffect(() => {
-    reset({
-      eintritt: mitgliedschaft?.eintritt ?? "",
-      austritt: mitgliedschaft?.austritt ?? "",
-      mitgliedsstatusId: mitgliedschaft?.mitgliedsstatusId ?? "",
-      stimmeId: mitgliedschaft?.stimmeId ?? "",
-      kammerchor: mitgliedschaft?.kammerchor ?? false,
-    });
+    reset(createMitgliedschaftDefaults(mitgliedschaft));
   }, [mitgliedschaft, reset]);
 
   useAutoSaveForm({
