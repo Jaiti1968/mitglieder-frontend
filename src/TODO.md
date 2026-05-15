@@ -1,14 +1,16 @@
 # TODO
 
 ## UX
-- [X] Erfolgsmeldung
-- [X] Unsaved Changes
+
+- [x] Erfolgsmeldung
+- [x] Unsaved Changes
 
 ## Features
-- [ ] Datenschutz
-- [ ] Chorkleidung
 
-- [ ] „Gespeichert“-Anzeige → UX / Feedback
+- [x] Datenschutz
+- [x] Chorkleidung
+
+- [x] „Gespeichert“-Anzeige → UX / Feedback
 - [ ] Validierung → Form Logic
 - [ ] Undo / History → Feature
 - [ ] Performance Optimierung → Architektur

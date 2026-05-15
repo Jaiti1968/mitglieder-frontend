@@ -4,11 +4,7 @@ import CheckboxField from "../../forms/CheckboxField";
 import FormField from "../../forms/FormField";
 import SelectField from "../../forms/SelectField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
-import {
-  validateCompleteDate,
-  validateDateRange,
-  validateRequired,
-} from "../../../utils/forms/validationHelpers";
+import { validateMitgliedschaft } from "../../../utils/forms/validators";
 
 export default function MemberMembershipForm({
   mitgliedschaft = {},
@@ -144,52 +140,4 @@ function createPayload(values) {
     stimmeId: values?.stimmeId ? Number(values.stimmeId) : null,
     kammerchor: values?.kammerchor === true,
   };
-}
-
-function validateMitgliedschaft(values) {
-  const validationErrors = [];
-
-  const eintritt = values?.eintritt ?? "";
-  const austritt = values?.austritt ?? "";
-  const mitgliedsstatusId = values?.mitgliedsstatusId ?? "";
-  const stimmeId = values?.stimmeId ?? "";
-
-  validateCompleteDate(
-    validationErrors,
-    "eintritt",
-    eintritt,
-    "Datum muss vollständig sein",
-  );
-
-  validateCompleteDate(
-    validationErrors,
-    "austritt",
-    austritt,
-    "Datum muss vollständig sein",
-  );
-
-  validateRequired(
-    validationErrors,
-    "mitgliedsstatusId",
-    mitgliedsstatusId,
-    "Mitgliederstatus ist Pflicht",
-  );
-
-  validateRequired(
-    validationErrors,
-    "stimmeId",
-    stimmeId,
-    "Stimme ist Pflicht",
-  );
-
-  validateDateRange(
-    validationErrors,
-    "eintritt",
-    eintritt,
-    "austritt",
-    austritt,
-    "Austritt darf nicht vor Eintritt liegen",
-  );
-
-  return validationErrors;
 }

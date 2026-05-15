@@ -2,10 +2,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
-import {
-  validateEmail,
-  validateMaxLength,
-} from "../../../utils/forms/validationHelpers";
+import { validateKontakt } from "../../../utils/forms/validators";
 
 export default function MemberContactForm({
   kontakt = {},
@@ -111,33 +108,4 @@ function createPayload(values) {
     adresszusatz: values.adresszusatz ?? "",
     briefanrede: values.briefanrede ?? "",
   };
-}
-
-function validateKontakt(values) {
-  const validationErrors = [];
-
-  validateMaxLength(
-    validationErrors,
-    "email",
-    values.email,
-    100,
-    "E-Mail darf maximal 100 Zeichen haben",
-  );
-
-  validateEmail(
-    validationErrors,
-    "email",
-    values.email,
-    "Bitte eine gültige E-Mail-Adresse eingeben",
-  );
-
-  validateMaxLength(
-    validationErrors,
-    "adresszusatz",
-    values.adresszusatz,
-    50,
-    "Adresszusatz darf maximal 50 Zeichen haben",
-  );
-
-  return validationErrors;
 }

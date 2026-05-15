@@ -3,10 +3,7 @@ import { useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
 import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
-import {
-  validateCompleteDate,
-  validateNotFutureDate,
-} from "../../../utils/forms/validationHelpers";
+import { validateDatenschutz } from "../../../utils/forms/validators";
 
 export default function MemberDatenschutzForm({
   datenschutz = {},
@@ -121,25 +118,4 @@ function createPayload(values) {
     datenschutzNr17: values?.datenschutzNr17 === true,
     datenschutzNr18: values?.datenschutzNr18 === true,
   };
-}
-
-function validateDatenschutz(values) {
-  const validationErrors = [];
-  const datumDatenschutz = values?.datumDatenschutz ?? "";
-
-  validateCompleteDate(
-    validationErrors,
-    "datumDatenschutz",
-    datumDatenschutz,
-    "Datum muss vollständig sein",
-  );
-
-  validateNotFutureDate(
-    validationErrors,
-    "datumDatenschutz",
-    datumDatenschutz,
-    "Datum Datenschutz darf nicht in der Zukunft liegen",
-  );
-
-  return validationErrors;
 }

@@ -4,10 +4,9 @@ import CheckboxField from "../../forms/CheckboxField";
 import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import {
-  validateCompleteDate,
-  validateDateRange,
-  validateNotFutureDate,
-} from "../../../utils/forms/validationHelpers";
+  parseKaufpreis,
+  validateChorkleidung,
+} from "../../../utils/forms/validators";
 
 export default function MemberChorkleidungForm({
   chorkleidung = {},
@@ -221,115 +220,6 @@ function createPayload(values) {
     sommerkleidungErhalten: values?.sommerkleidungErhalten || null,
     sommerkleidungRueckgabe: values?.sommerkleidungRueckgabe || null,
   };
-}
-
-function validateChorkleidung(values) {
-  const validationErrors = [];
-
-  validateCompleteDate(
-    validationErrors,
-    "uebergabeAm",
-    values?.uebergabeAm,
-    "Datum muss vollständig sein",
-  );
-  validateCompleteDate(
-    validationErrors,
-    "datumAnteil",
-    values?.datumAnteil,
-    "Datum muss vollständig sein",
-  );
-  validateCompleteDate(
-    validationErrors,
-    "rueckgabeAm",
-    values?.rueckgabeAm,
-    "Datum muss vollständig sein",
-  );
-  validateCompleteDate(
-    validationErrors,
-    "kaufdatum",
-    values?.kaufdatum,
-    "Datum muss vollständig sein",
-  );
-  validateCompleteDate(
-    validationErrors,
-    "sommerkleidungErhalten",
-    values?.sommerkleidungErhalten,
-    "Datum muss vollständig sein",
-  );
-  validateCompleteDate(
-    validationErrors,
-    "sommerkleidungRueckgabe",
-    values?.sommerkleidungRueckgabe,
-    "Datum muss vollständig sein",
-  );
-
-  validateNotFutureDate(
-    validationErrors,
-    "uebergabeAm",
-    values?.uebergabeAm,
-    "Übergabe am darf nicht in der Zukunft liegen",
-  );
-  validateNotFutureDate(
-    validationErrors,
-    "sommerkleidungErhalten",
-    values?.sommerkleidungErhalten,
-    "Sommerkleidung erhalten darf nicht in der Zukunft liegen",
-  );
-
-  validateDateRange(
-    validationErrors,
-    "uebergabeAm",
-    values?.uebergabeAm,
-    "rueckgabeAm",
-    values?.rueckgabeAm,
-    "Rückgabe darf nicht vor Übergabe liegen",
-  );
-  validateDateRange(
-    validationErrors,
-    "sommerkleidungErhalten",
-    values?.sommerkleidungErhalten,
-    "sommerkleidungRueckgabe",
-    values?.sommerkleidungRueckgabe,
-    "Sommerkleidung-Rückgabe darf nicht vor Erhalt liegen",
-  );
-
-  validateKaufpreis(validationErrors, values?.kaufpreis);
-
-  return validationErrors;
-}
-
-function validateKaufpreis(validationErrors, value) {
-  if (value === "" || value === null || value === undefined) {
-    return;
-  }
-
-  const kaufpreis = parseKaufpreis(value);
-
-  if (kaufpreis === null || Number.isNaN(kaufpreis)) {
-    validationErrors.push({
-      field: "kaufpreis",
-      message: "Kaufpreis muss eine Zahl sein",
-    });
-    return;
-  }
-
-  if (kaufpreis < 0) {
-    validationErrors.push({
-      field: "kaufpreis",
-      message: "Kaufpreis darf nicht negativ sein",
-    });
-  }
-}
-
-function parseKaufpreis(value) {
-  if (value === "" || value === null || value === undefined) {
-    return null;
-  }
-
-  const normalizedValue = String(value).trim().replace(",", ".");
-  const parsedValue = Number(normalizedValue);
-
-  return Number.isNaN(parsedValue) ? NaN : parsedValue;
 }
 
 function formatKaufpreis(value) {
