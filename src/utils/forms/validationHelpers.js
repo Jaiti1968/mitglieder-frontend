@@ -33,6 +33,14 @@ export function validateEmail(validationErrors, field, value, message) {
   }
 }
 
+export function validatePostalCode(validationErrors, field, value, message) {
+  const postalCode = String(value ?? "").trim();
+
+  if (postalCode && !/^\d{5}$/.test(postalCode)) {
+    validationErrors.push(createValidationError(field, message));
+  }
+}
+
 export function validateCompleteDate(validationErrors, field, value, message) {
   if (value && !isCompleteDate(value)) {
     validationErrors.push(createValidationError(field, message));

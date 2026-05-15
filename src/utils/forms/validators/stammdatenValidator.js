@@ -1,6 +1,7 @@
 import {
   validateCompleteDate,
   validateMaxLength,
+  validatePostalCode,
   validateRequired,
 } from "../validationHelpers";
 
@@ -78,12 +79,11 @@ export function validateStammdaten(values) {
     "Akademischer Titel darf maximal 50 Zeichen haben",
   );
 
-  validateMaxLength(
+  validatePostalCode(
     validationErrors,
     "plz",
     plz,
-    50,
-    "PLZ darf maximal 50 Zeichen haben",
+    "PLZ muss aus genau 5 Ziffern bestehen",
   );
 
   validateMaxLength(

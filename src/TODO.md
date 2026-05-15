@@ -9,9 +9,28 @@
 
 - [x] Datenschutz
 - [x] Chorkleidung
+- [ ] Undo / History
 
-- [x] „Gespeichert“-Anzeige → UX / Feedback
-- [ ] Validierung → Form Logic
-- [ ] Undo / History → Feature
-- [ ] Performance Optimierung → Architektur
+## Fachliche Validierung
+
 - [ ] PLZ-Validierung
+- [ ] optionale Telefon-Validierung (falls gewünscht)
+
+## Technisches Refactoring
+
+- [x] Validatoren aus Formularen extrahieren
+- [x] Payload-Mapping aus Formularen extrahieren
+- [x] Default-/Reset-Mapping aus Formularen extrahieren
+- [ ] Performance-Optimierung (nur falls echter Bedarf)
+
+## Technische Verbesserungen (optional)
+
+- [ ] gemeinsame DateField-Komponente
+- [ ] TitleField aus MemberStammdatenForm extrahieren
+- [ ] Validator Unit Tests
+- [ ] Payload/Validator-Konstanten zentralisieren (nur wenn sinnvoll)
+
+## Zukunft / größere Features
+
+- [ ] Login gegen echtes Backend
+- [ ] Undo / Änderungsverlauf / History
