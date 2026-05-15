@@ -39,7 +39,7 @@ export function validateStammdaten(values) {
       validationErrors,
       "geburtsdatum",
       geburtsdatum,
-      "Datum muss vollständig sein",
+      "Datum muss vollständig im Format TT.MM.JJJJ sein",
     );
   }
 

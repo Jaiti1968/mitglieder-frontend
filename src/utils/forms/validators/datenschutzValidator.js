@@ -11,7 +11,7 @@ export function validateDatenschutz(values) {
     validationErrors,
     "datumDatenschutz",
     datumDatenschutz,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
 
   validateNotFutureDate(

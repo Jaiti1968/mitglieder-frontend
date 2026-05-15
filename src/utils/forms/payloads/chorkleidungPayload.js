@@ -1,21 +1,34 @@
 import { parseKaufpreis } from "../validators";
+import { parseGermanDateToIso } from "../dateHelpers";
 
 export function createChorkleidungPayload(values) {
   return {
     ehemaligeStimme: values?.ehemaligeStimme ?? "",
-    uebergabeAm: values?.uebergabeAm || null,
+    uebergabeAm: values?.uebergabeAm
+      ? parseGermanDateToIso(values.uebergabeAm)
+      : null,
     bemerkungUebergabe: values?.bemerkungUebergabe ?? "",
     neubeschaffung: values?.neubeschaffung === true,
-    datumAnteil: values?.datumAnteil || null,
+    datumAnteil: values?.datumAnteil
+      ? parseGermanDateToIso(values.datumAnteil)
+      : null,
     barzahlung: values?.barzahlung === true,
     bearbeitungsstand: values?.bearbeitungsstand ?? "",
-    rueckgabeAm: values?.rueckgabeAm || null,
+    rueckgabeAm: values?.rueckgabeAm
+      ? parseGermanDateToIso(values.rueckgabeAm)
+      : null,
     bemerkungRueckgabe: values?.bemerkungRueckgabe ?? "",
-    kaufdatum: values?.kaufdatum || null,
+    kaufdatum: values?.kaufdatum
+      ? parseGermanDateToIso(values.kaufdatum)
+      : null,
     kaufpreis: parseKaufpreis(values?.kaufpreis),
     sommerkleidung: values?.sommerkleidung === true,
-    sommerkleidungErhalten: values?.sommerkleidungErhalten || null,
-    sommerkleidungRueckgabe: values?.sommerkleidungRueckgabe || null,
+    sommerkleidungErhalten: values?.sommerkleidungErhalten
+      ? parseGermanDateToIso(values.sommerkleidungErhalten)
+      : null,
+    sommerkleidungRueckgabe: values?.sommerkleidungRueckgabe
+      ? parseGermanDateToIso(values.sommerkleidungRueckgabe)
+      : null,
   };
 }
 

@@ -1,3 +1,5 @@
+import { formatIsoDateToGerman } from "../dateHelpers";
+
 export function createStammdatenDefaults(stammdaten = {}) {
   return {
     personFirma: stammdaten?.personFirma ?? false,
@@ -5,7 +7,7 @@ export function createStammdatenDefaults(stammdaten = {}) {
     akademischerTitel: stammdaten?.akademischerTitel ?? "",
     vorname: stammdaten?.vorname ?? "",
     nachname: stammdaten?.nachname ?? "",
-    geburtsdatum: stammdaten?.geburtsdatum ?? "",
+    geburtsdatum: formatIsoDateToGerman(stammdaten?.geburtsdatum),
     plz: stammdaten?.plz ?? "",
     ort: stammdaten?.ort ?? "",
     strasseHausNr: stammdaten?.strasseHausNr ?? "",

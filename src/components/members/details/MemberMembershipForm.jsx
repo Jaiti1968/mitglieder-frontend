@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
-import FormField from "../../forms/FormField";
+import DateField from "../../forms/DateField";
 import SelectField from "../../forms/SelectField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateMitgliedschaft } from "../../../utils/forms/validators";
@@ -67,10 +67,8 @@ export default function MemberMembershipForm({
         name="eintritt"
         control={control}
         render={({ field }) => (
-          <FormField
+          <DateField
             label="Eintritt"
-            type="text"
-            placeholder="YYYY-MM-DD"
             error={errors.eintritt?.message}
             value={field.value ?? ""}
             onChange={(event) => field.onChange(event.target.value)}
@@ -85,10 +83,8 @@ export default function MemberMembershipForm({
         name="austritt"
         control={control}
         render={({ field }) => (
-          <FormField
+          <DateField
             label="Austritt"
-            type="text"
-            placeholder="YYYY-MM-DD"
             error={errors.austritt?.message}
             value={field.value ?? ""}
             onChange={(event) => field.onChange(event.target.value)}

@@ -1,9 +1,35 @@
+export function formatIsoDateToGerman(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const [year, month, day] = value.split("-");
+  return `${day}.${month}.${year}`;
+}
+
+export function parseGermanDateToIso(value) {
+  if (!value) {
+    return null;
+  }
+
+  if (!isCompleteDate(value)) {
+    return value;
+  }
+
+  const [day, month, year] = value.split(".");
+  return `${year}-${month}-${day}`;
+}
+
 export function isCompleteDate(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? "")) {
+  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(value ?? "")) {
     return false;
   }
 
-  const [year, month, day] = value.split("-").map(Number);
+  const [day, month, year] = value.split(".").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day));
 
   return (
@@ -18,7 +44,7 @@ export function isDateBefore(firstDate, secondDate) {
     return false;
   }
 
-  return firstDate < secondDate;
+  return parseGermanDateToIso(firstDate) < parseGermanDateToIso(secondDate);
 }
 
 export function isDateInFuture(value) {
@@ -27,5 +53,5 @@ export function isDateInFuture(value) {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  return value > today;
+  return parseGermanDateToIso(value) > today;
 }

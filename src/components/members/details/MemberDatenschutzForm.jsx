@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
-import FormField from "../../forms/FormField";
+import DateField from "../../forms/DateField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateDatenschutz } from "../../../utils/forms/validators";
 import { createDatenschutzPayload } from "../../../utils/forms/payloads";
@@ -61,10 +61,8 @@ export default function MemberDatenschutzForm({
 
   return (
     <form noValidate>
-      <FormField
+      <DateField
         label="Datum Datenschutz"
-        type="text"
-        placeholder="YYYY-MM-DD"
         error={errors.datumDatenschutz?.message}
         {...register("datumDatenschutz")}
       />

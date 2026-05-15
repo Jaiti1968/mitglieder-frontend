@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
+import DateField from "../../forms/DateField";
 import FormField from "../../forms/FormField";
 import SelectField from "../../forms/SelectField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
@@ -165,10 +166,8 @@ export default function MemberStammdatenForm({
       />
 
       {!isFirma && (
-        <FormField
+        <DateField
           label="Geburtsdatum"
-          type="text"
-          placeholder="YYYY-MM-DD"
           error={errors.geburtsdatum?.message}
           {...register("geburtsdatum")}
         />

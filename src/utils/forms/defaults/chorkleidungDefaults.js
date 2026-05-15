@@ -1,20 +1,25 @@
 import { formatKaufpreis } from "../payloads";
+import { formatIsoDateToGerman } from "../dateHelpers";
 
 export function createChorkleidungDefaults(chorkleidung = {}) {
   return {
     ehemaligeStimme: chorkleidung?.ehemaligeStimme ?? "",
-    uebergabeAm: chorkleidung?.uebergabeAm ?? "",
+    uebergabeAm: formatIsoDateToGerman(chorkleidung?.uebergabeAm),
     bemerkungUebergabe: chorkleidung?.bemerkungUebergabe ?? "",
     neubeschaffung: chorkleidung?.neubeschaffung ?? false,
-    datumAnteil: chorkleidung?.datumAnteil ?? "",
+    datumAnteil: formatIsoDateToGerman(chorkleidung?.datumAnteil),
     barzahlung: chorkleidung?.barzahlung ?? false,
     bearbeitungsstand: chorkleidung?.bearbeitungsstand ?? "",
-    rueckgabeAm: chorkleidung?.rueckgabeAm ?? "",
+    rueckgabeAm: formatIsoDateToGerman(chorkleidung?.rueckgabeAm),
     bemerkungRueckgabe: chorkleidung?.bemerkungRueckgabe ?? "",
-    kaufdatum: chorkleidung?.kaufdatum ?? "",
+    kaufdatum: formatIsoDateToGerman(chorkleidung?.kaufdatum),
     kaufpreis: formatKaufpreis(chorkleidung?.kaufpreis),
     sommerkleidung: chorkleidung?.sommerkleidung ?? false,
-    sommerkleidungErhalten: chorkleidung?.sommerkleidungErhalten ?? "",
-    sommerkleidungRueckgabe: chorkleidung?.sommerkleidungRueckgabe ?? "",
+    sommerkleidungErhalten: formatIsoDateToGerman(
+      chorkleidung?.sommerkleidungErhalten,
+    ),
+    sommerkleidungRueckgabe: formatIsoDateToGerman(
+      chorkleidung?.sommerkleidungRueckgabe,
+    ),
   };
 }

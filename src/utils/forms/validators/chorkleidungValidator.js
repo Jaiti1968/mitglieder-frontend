@@ -11,37 +11,37 @@ export function validateChorkleidung(values) {
     validationErrors,
     "uebergabeAm",
     values?.uebergabeAm,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
   validateCompleteDate(
     validationErrors,
     "datumAnteil",
     values?.datumAnteil,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
   validateCompleteDate(
     validationErrors,
     "rueckgabeAm",
     values?.rueckgabeAm,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
   validateCompleteDate(
     validationErrors,
     "kaufdatum",
     values?.kaufdatum,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
   validateCompleteDate(
     validationErrors,
     "sommerkleidungErhalten",
     values?.sommerkleidungErhalten,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
   validateCompleteDate(
     validationErrors,
     "sommerkleidungRueckgabe",
     values?.sommerkleidungRueckgabe,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
 
   validateNotFutureDate(

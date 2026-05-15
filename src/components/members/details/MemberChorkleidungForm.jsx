@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
+import DateField from "../../forms/DateField";
 import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateChorkleidung } from "../../../utils/forms/validators";
@@ -79,10 +80,8 @@ export default function MemberChorkleidungForm({
         {...register("ehemaligeStimme")}
       />
 
-      <FormField
+      <DateField
         label="Übergabe am"
-        type="text"
-        placeholder="YYYY-MM-DD"
         error={errors.uebergabeAm?.message}
         {...register("uebergabeAm")}
       />
@@ -95,10 +94,8 @@ export default function MemberChorkleidungForm({
 
       <CheckboxField label="Neubeschaffung" {...register("neubeschaffung")} />
 
-      <FormField
+      <DateField
         label="Datum Anteil"
-        type="text"
-        placeholder="YYYY-MM-DD"
         error={errors.datumAnteil?.message}
         {...register("datumAnteil")}
       />
@@ -111,10 +108,8 @@ export default function MemberChorkleidungForm({
         {...register("bearbeitungsstand")}
       />
 
-      <FormField
+      <DateField
         label="Rückgabe am"
-        type="text"
-        placeholder="YYYY-MM-DD"
         error={errors.rueckgabeAm?.message}
         {...register("rueckgabeAm")}
       />
@@ -125,10 +120,8 @@ export default function MemberChorkleidungForm({
         {...register("bemerkungRueckgabe")}
       />
 
-      <FormField
+      <DateField
         label="Kaufdatum"
-        type="text"
-        placeholder="YYYY-MM-DD"
         error={errors.kaufdatum?.message}
         {...register("kaufdatum")}
       />
@@ -156,18 +149,14 @@ export default function MemberChorkleidungForm({
 
       <CheckboxField label="Sommerkleidung" {...register("sommerkleidung")} />
 
-      <FormField
+      <DateField
         label="Sommerkleidung erhalten"
-        type="text"
-        placeholder="YYYY-MM-DD"
         error={errors.sommerkleidungErhalten?.message}
         {...register("sommerkleidungErhalten")}
       />
 
-      <FormField
+      <DateField
         label="Sommerkleidung Rückgabe"
-        type="text"
-        placeholder="YYYY-MM-DD"
         error={errors.sommerkleidungRueckgabe?.message}
         {...register("sommerkleidungRueckgabe")}
       />

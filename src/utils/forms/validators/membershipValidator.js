@@ -16,14 +16,14 @@ export function validateMitgliedschaft(values) {
     validationErrors,
     "eintritt",
     eintritt,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
 
   validateCompleteDate(
     validationErrors,
     "austritt",
     austritt,
-    "Datum muss vollständig sein",
+    "Datum muss vollständig im Format TT.MM.JJJJ sein",
   );
 
   validateRequired(

@@ -13,8 +13,10 @@
 
 ## Fachliche Validierung
 
-- [ ] PLZ-Validierung
-- [ ] optionale Telefon-Validierung (falls gewünscht)
+- [x] PLZ-Validierung
+- [ ] Telefonnummern-Konzept: Format, Migration und Validierung festlegen
+- [ ] Telefonnummern-Bestandsdaten analysieren
+- [ ] Telefonnummern optional auf E.164 normalisieren (+49...)
 
 ## Technisches Refactoring
 
@@ -25,7 +27,7 @@
 
 ## Technische Verbesserungen (optional)
 
-- [ ] gemeinsame DateField-Komponente
+- [x] gemeinsame DateField-Komponente
 - [ ] TitleField aus MemberStammdatenForm extrahieren
 - [ ] Validator Unit Tests
 - [ ] Payload/Validator-Konstanten zentralisieren (nur wenn sinnvoll)

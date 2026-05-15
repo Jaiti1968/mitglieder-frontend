@@ -1,6 +1,10 @@
+import { parseGermanDateToIso } from "../dateHelpers";
+
 export function createDatenschutzPayload(values) {
   return {
-    datumDatenschutz: values?.datumDatenschutz || null,
+    datumDatenschutz: values?.datumDatenschutz
+      ? parseGermanDateToIso(values.datumDatenschutz)
+      : null,
     datenschutzNr14: values?.datenschutzNr14 === true,
     datenschutzNr15: values?.datenschutzNr15 === true,
     datenschutzNr16: values?.datenschutzNr16 === true,

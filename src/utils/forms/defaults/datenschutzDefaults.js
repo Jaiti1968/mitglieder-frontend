@@ -1,6 +1,8 @@
+import { formatIsoDateToGerman } from "../dateHelpers";
+
 export function createDatenschutzDefaults(datenschutz = {}) {
   return {
-    datumDatenschutz: datenschutz?.datumDatenschutz ?? "",
+    datumDatenschutz: formatIsoDateToGerman(datenschutz?.datumDatenschutz),
     datenschutzNr14: datenschutz?.datenschutzNr14 ?? false,
     datenschutzNr15: datenschutz?.datenschutzNr15 ?? false,
     datenschutzNr16: datenschutz?.datenschutzNr16 ?? false,

@@ -1,3 +1,5 @@
+import { parseGermanDateToIso } from "../dateHelpers";
+
 export function createStammdatenPayload(values) {
   return {
     personFirma: values?.personFirma === true,
@@ -7,7 +9,11 @@ export function createStammdatenPayload(values) {
       : (values?.akademischerTitel ?? ""),
     vorname: values?.vorname ?? "",
     nachname: values?.nachname ?? "",
-    geburtsdatum: values?.personFirma ? "" : (values?.geburtsdatum ?? ""),
+    geburtsdatum: values?.personFirma
+      ? ""
+      : values?.geburtsdatum
+        ? parseGermanDateToIso(values.geburtsdatum)
+        : "",
     plz: values?.plz ?? "",
     ort: values?.ort ?? "",
     strasseHausNr: values?.strasseHausNr ?? "",
