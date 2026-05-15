@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateKontakt } from "../../../utils/forms/validators";
+import { createKontaktPayload } from "../../../utils/forms/payloads";
 
 export default function MemberContactForm({
   kontakt = {},
@@ -65,7 +66,7 @@ export default function MemberContactForm({
       "briefanrede",
     ],
     validate: validateKontakt,
-    buildPayload: createPayload,
+    buildPayload: createKontaktPayload,
     resetDependencies: [kontakt],
     errorLogLabel: "Auto-Save Kontakt",
   });
@@ -97,15 +98,4 @@ export default function MemberContactForm({
       <FormField label="Briefanrede" {...register("briefanrede")} />
     </form>
   );
-}
-
-function createPayload(values) {
-  return {
-    telefonPrivat: values.telefonPrivat ?? "",
-    telefonGeschaeftlich: values.telefonGeschaeftlich ?? "",
-    mobiltelefon: values.mobiltelefon ?? "",
-    email: values.email ?? "",
-    adresszusatz: values.adresszusatz ?? "",
-    briefanrede: values.briefanrede ?? "",
-  };
 }

@@ -4,6 +4,7 @@ import FormField from "../../forms/FormField";
 import SelectField from "../../forms/SelectField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateStammdaten } from "../../../utils/forms/validators";
+import { createStammdatenPayload } from "../../../utils/forms/payloads";
 
 export default function MemberStammdatenForm({
   stammdaten = {},
@@ -79,7 +80,7 @@ export default function MemberStammdatenForm({
       "strasseHausNr",
     ],
     validate: validateStammdaten,
-    buildPayload: createPayload,
+    buildPayload: createStammdatenPayload,
     resetDependencies: [stammdaten],
     errorLogLabel: "Auto-Save Stammdaten",
   });
@@ -203,22 +204,6 @@ export default function MemberStammdatenForm({
       <FormField label="Ort" error={errors.ort?.message} {...register("ort")} />
     </form>
   );
-}
-
-function createPayload(values) {
-  return {
-    personFirma: values?.personFirma === true,
-    anrede: values?.personFirma ? "" : (values?.anrede ?? ""),
-    akademischerTitel: values?.personFirma
-      ? ""
-      : (values?.akademischerTitel ?? ""),
-    vorname: values?.vorname ?? "",
-    nachname: values?.nachname ?? "",
-    geburtsdatum: values?.personFirma ? "" : (values?.geburtsdatum ?? ""),
-    plz: values?.plz ?? "",
-    ort: values?.ort ?? "",
-    strasseHausNr: values?.strasseHausNr ?? "",
-  };
 }
 
 function TitleField({ value, onChange, error }) {

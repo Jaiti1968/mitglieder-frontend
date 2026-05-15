@@ -14,3 +14,4 @@
 - [ ] Validierung → Form Logic
 - [ ] Undo / History → Feature
 - [ ] Performance Optimierung → Architektur
+- [ ] PLZ-Validierung

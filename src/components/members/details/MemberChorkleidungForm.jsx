@@ -3,10 +3,11 @@ import { Controller, useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
 import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
+import { validateChorkleidung } from "../../../utils/forms/validators";
 import {
-  parseKaufpreis,
-  validateChorkleidung,
-} from "../../../utils/forms/validators";
+  createChorkleidungPayload,
+  formatKaufpreis,
+} from "../../../utils/forms/payloads";
 
 export default function MemberChorkleidungForm({
   chorkleidung = {},
@@ -93,7 +94,7 @@ export default function MemberChorkleidungForm({
       "sommerkleidungRueckgabe",
     ],
     validate: validateChorkleidung,
-    buildPayload: createPayload,
+    buildPayload: createChorkleidungPayload,
     resetDependencies: [chorkleidung],
     debounceMs: 1500,
     errorLogLabel: "Auto-Save Chorkleidung",
@@ -201,37 +202,4 @@ export default function MemberChorkleidungForm({
       />
     </form>
   );
-}
-
-function createPayload(values) {
-  return {
-    ehemaligeStimme: values?.ehemaligeStimme ?? "",
-    uebergabeAm: values?.uebergabeAm || null,
-    bemerkungUebergabe: values?.bemerkungUebergabe ?? "",
-    neubeschaffung: values?.neubeschaffung === true,
-    datumAnteil: values?.datumAnteil || null,
-    barzahlung: values?.barzahlung === true,
-    bearbeitungsstand: values?.bearbeitungsstand ?? "",
-    rueckgabeAm: values?.rueckgabeAm || null,
-    bemerkungRueckgabe: values?.bemerkungRueckgabe ?? "",
-    kaufdatum: values?.kaufdatum || null,
-    kaufpreis: parseKaufpreis(values?.kaufpreis),
-    sommerkleidung: values?.sommerkleidung === true,
-    sommerkleidungErhalten: values?.sommerkleidungErhalten || null,
-    sommerkleidungRueckgabe: values?.sommerkleidungRueckgabe || null,
-  };
-}
-
-function formatKaufpreis(value) {
-  if (value === "" || value === null || value === undefined) {
-    return "";
-  }
-
-  const parsedValue = parseKaufpreis(value);
-
-  if (parsedValue === null || Number.isNaN(parsedValue)) {
-    return value;
-  }
-
-  return parsedValue.toFixed(2).replace(".", ",");
 }

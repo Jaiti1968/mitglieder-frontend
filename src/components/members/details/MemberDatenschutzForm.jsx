@@ -4,6 +4,7 @@ import CheckboxField from "../../forms/CheckboxField";
 import FormField from "../../forms/FormField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateDatenschutz } from "../../../utils/forms/validators";
+import { createDatenschutzPayload } from "../../../utils/forms/payloads";
 
 export default function MemberDatenschutzForm({
   datenschutz = {},
@@ -66,7 +67,7 @@ export default function MemberDatenschutzForm({
       "datenschutzNr18",
     ],
     validate: validateDatenschutz,
-    buildPayload: createPayload,
+    buildPayload: createDatenschutzPayload,
     resetDependencies: [datenschutz],
     errorLogLabel: "Auto-Save Datenschutz",
   });
@@ -107,15 +108,4 @@ export default function MemberDatenschutzForm({
       />
     </form>
   );
-}
-
-function createPayload(values) {
-  return {
-    datumDatenschutz: values?.datumDatenschutz || null,
-    datenschutzNr14: values?.datenschutzNr14 === true,
-    datenschutzNr15: values?.datenschutzNr15 === true,
-    datenschutzNr16: values?.datenschutzNr16 === true,
-    datenschutzNr17: values?.datenschutzNr17 === true,
-    datenschutzNr18: values?.datenschutzNr18 === true,
-  };
 }

@@ -5,6 +5,7 @@ import FormField from "../../forms/FormField";
 import SelectField from "../../forms/SelectField";
 import useAutoSaveForm from "../../../hooks/forms/useAutoSaveForm";
 import { validateMitgliedschaft } from "../../../utils/forms/validators";
+import { createMitgliedschaftPayload } from "../../../utils/forms/payloads";
 
 export default function MemberMembershipForm({
   mitgliedschaft = {},
@@ -66,7 +67,7 @@ export default function MemberMembershipForm({
       "kammerchor",
     ],
     validate: validateMitgliedschaft,
-    buildPayload: createPayload,
+    buildPayload: createMitgliedschaftPayload,
     resetDependencies: [mitgliedschaft],
     errorLogLabel: "Auto-Save Mitgliedschaft",
   });
@@ -128,16 +129,4 @@ export default function MemberMembershipForm({
       <CheckboxField label="Kammerchor" {...register("kammerchor")} />
     </form>
   );
-}
-
-function createPayload(values) {
-  return {
-    eintritt: values?.eintritt || null,
-    austritt: values?.austritt || null,
-    mitgliedsstatusId: values?.mitgliedsstatusId
-      ? Number(values.mitgliedsstatusId)
-      : null,
-    stimmeId: values?.stimmeId ? Number(values.stimmeId) : null,
-    kammerchor: values?.kammerchor === true,
-  };
 }
