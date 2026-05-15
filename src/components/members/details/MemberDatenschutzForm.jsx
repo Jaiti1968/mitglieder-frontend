@@ -62,9 +62,10 @@ export default function MemberDatenschutzForm({
   return (
     <form noValidate>
       <DateField
+        name="datumDatenschutz"
+        control={control}
         label="Datum Datenschutz"
         error={errors.datumDatenschutz?.message}
-        {...register("datumDatenschutz")}
       />
 
       <CheckboxField

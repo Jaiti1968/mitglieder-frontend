@@ -167,9 +167,10 @@ export default function MemberStammdatenForm({
 
       {!isFirma && (
         <DateField
+          name="geburtsdatum"
+          control={control}
           label="Geburtsdatum"
           error={errors.geburtsdatum?.message}
-          {...register("geburtsdatum")}
         />
       )}
 

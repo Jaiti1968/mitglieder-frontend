@@ -81,9 +81,10 @@ export default function MemberChorkleidungForm({
       />
 
       <DateField
+        name="uebergabeAm"
+        control={control}
         label="Übergabe am"
         error={errors.uebergabeAm?.message}
-        {...register("uebergabeAm")}
       />
 
       <FormField
@@ -95,9 +96,10 @@ export default function MemberChorkleidungForm({
       <CheckboxField label="Neubeschaffung" {...register("neubeschaffung")} />
 
       <DateField
+        name="datumAnteil"
+        control={control}
         label="Datum Anteil"
         error={errors.datumAnteil?.message}
-        {...register("datumAnteil")}
       />
 
       <CheckboxField label="Barzahlung" {...register("barzahlung")} />
@@ -109,9 +111,10 @@ export default function MemberChorkleidungForm({
       />
 
       <DateField
+        name="rueckgabeAm"
+        control={control}
         label="Rückgabe am"
         error={errors.rueckgabeAm?.message}
-        {...register("rueckgabeAm")}
       />
 
       <FormField
@@ -121,9 +124,10 @@ export default function MemberChorkleidungForm({
       />
 
       <DateField
+        name="kaufdatum"
+        control={control}
         label="Kaufdatum"
         error={errors.kaufdatum?.message}
-        {...register("kaufdatum")}
       />
 
       <Controller
@@ -150,15 +154,17 @@ export default function MemberChorkleidungForm({
       <CheckboxField label="Sommerkleidung" {...register("sommerkleidung")} />
 
       <DateField
+        name="sommerkleidungErhalten"
+        control={control}
         label="Sommerkleidung erhalten"
         error={errors.sommerkleidungErhalten?.message}
-        {...register("sommerkleidungErhalten")}
       />
 
       <DateField
+        name="sommerkleidungRueckgabe"
+        control={control}
         label="Sommerkleidung Rückgabe"
         error={errors.sommerkleidungRueckgabe?.message}
-        {...register("sommerkleidungRueckgabe")}
       />
     </form>
   );

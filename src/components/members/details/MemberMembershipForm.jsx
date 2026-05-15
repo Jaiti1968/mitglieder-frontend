@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
 import DateField from "../../forms/DateField";
 import SelectField from "../../forms/SelectField";
@@ -63,36 +63,18 @@ export default function MemberMembershipForm({
 
   return (
     <form noValidate>
-      <Controller
+      <DateField
         name="eintritt"
         control={control}
-        render={({ field }) => (
-          <DateField
-            label="Eintritt"
-            error={errors.eintritt?.message}
-            value={field.value ?? ""}
-            onChange={(event) => field.onChange(event.target.value)}
-            onBlur={field.onBlur}
-            name={field.name}
-            ref={field.ref}
-          />
-        )}
+        label="Eintritt"
+        error={errors.eintritt?.message}
       />
 
-      <Controller
+      <DateField
         name="austritt"
         control={control}
-        render={({ field }) => (
-          <DateField
-            label="Austritt"
-            error={errors.austritt?.message}
-            value={field.value ?? ""}
-            onChange={(event) => field.onChange(event.target.value)}
-            onBlur={field.onBlur}
-            name={field.name}
-            ref={field.ref}
-          />
-        )}
+        label="Austritt"
+        error={errors.austritt?.message}
       />
 
       <SelectField
