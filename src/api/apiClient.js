@@ -1,5 +1,3 @@
-import { getAuthorizationHeader, clearAuth } from "../auth/authStorage";
-
 async function handleResponse(response) {
   if (response.ok) {
     if (response.status === 204) {
@@ -10,7 +8,6 @@ async function handleResponse(response) {
   }
 
   if (response.status === 401) {
-    clearAuth();
     window.location.href = "/login";
     throw new Error("Nicht autorisiert");
   }
@@ -25,7 +22,7 @@ async function handleResponse(response) {
       errorMessage = errorBody.message;
     }
   } catch {
-    // Falls die Antwort kein JSON enthält, bleibt die generische Meldung.
+    // Antwort war kein JSON
   }
 
   const apiError = new Error(errorMessage);
@@ -42,48 +39,32 @@ async function handleResponse(response) {
   throw apiError;
 }
 
-function createHeaders(extraHeaders = {}) {
-  const headers = {
-    ...extraHeaders,
+function createRequestOptions(method = "GET", body = null) {
+  const options = {
+    method,
+    credentials: "include",
+    headers: {},
   };
 
-  const authHeader = getAuthorizationHeader();
-
-  if (authHeader) {
-    headers.Authorization = authHeader;
+  if (body !== null) {
+    options.headers["Content-Type"] = "application/json";
+    options.body = JSON.stringify(body);
   }
 
-  return headers;
+  return options;
 }
 
 export async function apiGet(path) {
-  const response = await fetch(path, {
-    headers: createHeaders(),
-  });
-
+  const response = await fetch(path, createRequestOptions("GET"));
   return handleResponse(response);
 }
 
 export async function apiPost(path, body) {
-  const response = await fetch(path, {
-    method: "POST",
-    headers: createHeaders({
-      "Content-Type": "application/json",
-    }),
-    body: JSON.stringify(body),
-  });
-
+  const response = await fetch(path, createRequestOptions("POST", body));
   return handleResponse(response);
 }
 
 export async function apiPut(path, body) {
-  const response = await fetch(path, {
-    method: "PUT",
-    headers: createHeaders({
-      "Content-Type": "application/json",
-    }),
-    body: JSON.stringify(body),
-  });
-
+  const response = await fetch(path, createRequestOptions("PUT", body));
   return handleResponse(response);
 }

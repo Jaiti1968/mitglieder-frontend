@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { saveAuth } from "../auth/authStorage";
+import { useLocation, useNavigate } from "react-router-dom";
+import useAuth from "../auth/useAuth";
 import ErrorBox from "../components/common/ErrorBox";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const redirectTo = location.state?.from?.pathname || "/members";
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -18,13 +22,10 @@ export default function LoginPage() {
     setIsLoggingIn(true);
 
     try {
-      // Speichert Login-Daten lokal
-      saveAuth(username, password);
-
-      // Kein Backend-Check → direkt weiter
-      navigate("/members");
-    } catch {
-      setErrorMessage("Login fehlgeschlagen.");
+      await login(username, password);
+      navigate(redirectTo, { replace: true });
+    } catch (error) {
+      setErrorMessage(error.message || "Login fehlgeschlagen.");
     } finally {
       setIsLoggingIn(false);
     }
