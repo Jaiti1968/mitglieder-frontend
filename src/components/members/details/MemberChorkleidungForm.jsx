@@ -13,6 +13,7 @@ import { createChorkleidungDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberChorkleidungForm({
   chorkleidung = {},
+  readOnly = false,
   onChange,
   onAutoSaveStart,
   onAutoSaveSuccess,
@@ -38,6 +39,7 @@ export default function MemberChorkleidungForm({
   }, [chorkleidung, reset]);
 
   useAutoSaveForm({
+    enabled: !readOnly,
     control,
     isDirty,
     setError,
@@ -77,6 +79,7 @@ export default function MemberChorkleidungForm({
       <FormField
         label="Ehemalige Stimme"
         error={errors.ehemaligeStimme?.message}
+        disabled={readOnly}
         {...register("ehemaligeStimme")}
       />
 
@@ -85,28 +88,40 @@ export default function MemberChorkleidungForm({
         control={control}
         label="Übergabe am"
         error={errors.uebergabeAm?.message}
+        disabled={readOnly}
       />
 
       <FormField
         label="Bemerkung Übergabe"
         error={errors.bemerkungUebergabe?.message}
+        disabled={readOnly}
         {...register("bemerkungUebergabe")}
       />
 
-      <CheckboxField label="Neubeschaffung" {...register("neubeschaffung")} />
+      <CheckboxField
+        label="Neubeschaffung"
+        disabled={readOnly}
+        {...register("neubeschaffung")}
+      />
 
       <DateField
         name="datumAnteil"
         control={control}
         label="Datum Anteil"
         error={errors.datumAnteil?.message}
+        disabled={readOnly}
       />
 
-      <CheckboxField label="Barzahlung" {...register("barzahlung")} />
+      <CheckboxField
+        label="Barzahlung"
+        disabled={readOnly}
+        {...register("barzahlung")}
+      />
 
       <FormField
         label="Bearbeitungsstand"
         error={errors.bearbeitungsstand?.message}
+        disabled={readOnly}
         {...register("bearbeitungsstand")}
       />
 
@@ -115,11 +130,13 @@ export default function MemberChorkleidungForm({
         control={control}
         label="Rückgabe am"
         error={errors.rueckgabeAm?.message}
+        disabled={readOnly}
       />
 
       <FormField
         label="Bemerkung Rückgabe"
         error={errors.bemerkungRueckgabe?.message}
+        disabled={readOnly}
         {...register("bemerkungRueckgabe")}
       />
 
@@ -128,6 +145,7 @@ export default function MemberChorkleidungForm({
         control={control}
         label="Kaufdatum"
         error={errors.kaufdatum?.message}
+        disabled={readOnly}
       />
 
       <Controller
@@ -140,9 +158,13 @@ export default function MemberChorkleidungForm({
             placeholder="0,00"
             error={errors.kaufpreis?.message}
             value={field.value ?? ""}
+            disabled={readOnly}
             onChange={(event) => field.onChange(event.target.value)}
             onBlur={() => {
-              field.onChange(formatKaufpreis(field.value));
+              if (!readOnly) {
+                field.onChange(formatKaufpreis(field.value));
+              }
+
               field.onBlur();
             }}
             name={field.name}
@@ -151,13 +173,18 @@ export default function MemberChorkleidungForm({
         )}
       />
 
-      <CheckboxField label="Sommerkleidung" {...register("sommerkleidung")} />
+      <CheckboxField
+        label="Sommerkleidung"
+        disabled={readOnly}
+        {...register("sommerkleidung")}
+      />
 
       <DateField
         name="sommerkleidungErhalten"
         control={control}
         label="Sommerkleidung erhalten"
         error={errors.sommerkleidungErhalten?.message}
+        disabled={readOnly}
       />
 
       <DateField
@@ -165,6 +192,7 @@ export default function MemberChorkleidungForm({
         control={control}
         label="Sommerkleidung Rückgabe"
         error={errors.sommerkleidungRueckgabe?.message}
+        disabled={readOnly}
       />
     </form>
   );

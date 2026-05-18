@@ -15,9 +15,10 @@ export async function logout() {
   const response = await fetch("/api/auth/logout", {
     method: "POST",
     credentials: "include",
+    cache: "no-store",
   });
 
-  if (response.status === 204) {
+  if (response.status === 204 || response.status === 401) {
     return null;
   }
 

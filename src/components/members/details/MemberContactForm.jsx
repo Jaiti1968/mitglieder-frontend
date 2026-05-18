@@ -8,6 +8,7 @@ import { createKontaktDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberContactForm({
   kontakt = {},
+  readOnly = false,
   onChange,
   onAutoSaveStart,
   onAutoSaveSuccess,
@@ -33,6 +34,7 @@ export default function MemberContactForm({
   }, [kontakt, reset]);
 
   useAutoSaveForm({
+    enabled: !readOnly,
     control,
     isDirty,
     setError,
@@ -60,29 +62,44 @@ export default function MemberContactForm({
 
   return (
     <form noValidate>
-      <FormField label="Telefon privat" {...register("telefonPrivat")} />
+      <FormField
+        label="Telefon privat"
+        disabled={readOnly}
+        {...register("telefonPrivat")}
+      />
 
       <FormField
         label="Telefon geschäftlich"
+        disabled={readOnly}
         {...register("telefonGeschaeftlich")}
       />
 
-      <FormField label="Mobiltelefon" {...register("mobiltelefon")} />
+      <FormField
+        label="Mobiltelefon"
+        disabled={readOnly}
+        {...register("mobiltelefon")}
+      />
 
       <FormField
         label="E-Mail"
         type="text"
         error={errors.email?.message}
+        disabled={readOnly}
         {...register("email")}
       />
 
       <FormField
         label="Adresszusatz"
         error={errors.adresszusatz?.message}
+        disabled={readOnly}
         {...register("adresszusatz")}
       />
 
-      <FormField label="Briefanrede" {...register("briefanrede")} />
+      <FormField
+        label="Briefanrede"
+        disabled={readOnly}
+        {...register("briefanrede")}
+      />
     </form>
   );
 }

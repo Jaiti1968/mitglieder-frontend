@@ -12,6 +12,7 @@ export default function MemberMembershipForm({
   mitgliedschaft = {},
   statuses = [],
   voices = [],
+  readOnly = false,
   onChange,
   onAutoSaveStart,
   onAutoSaveSuccess,
@@ -37,6 +38,7 @@ export default function MemberMembershipForm({
   }, [mitgliedschaft, reset]);
 
   useAutoSaveForm({
+    enabled: !readOnly,
     control,
     isDirty,
     setError,
@@ -68,6 +70,7 @@ export default function MemberMembershipForm({
         control={control}
         label="Eintritt"
         error={errors.eintritt?.message}
+        disabled={readOnly}
       />
 
       <DateField
@@ -75,6 +78,7 @@ export default function MemberMembershipForm({
         control={control}
         label="Austritt"
         error={errors.austritt?.message}
+        disabled={readOnly}
       />
 
       <SelectField
@@ -82,6 +86,7 @@ export default function MemberMembershipForm({
         required
         error={errors.mitgliedsstatusId?.message}
         options={statuses}
+        disabled={readOnly}
         {...register("mitgliedsstatusId")}
       />
 
@@ -90,10 +95,15 @@ export default function MemberMembershipForm({
         required
         error={errors.stimmeId?.message}
         options={voices}
+        disabled={readOnly}
         {...register("stimmeId")}
       />
 
-      <CheckboxField label="Kammerchor" {...register("kammerchor")} />
+      <CheckboxField
+        label="Kammerchor"
+        disabled={readOnly}
+        {...register("kammerchor")}
+      />
     </form>
   );
 }

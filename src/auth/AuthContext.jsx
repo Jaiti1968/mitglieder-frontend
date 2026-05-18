@@ -46,8 +46,13 @@ export default function AuthProvider({ children }) {
   }
 
   async function logout() {
-    await logoutRequest();
     setUser(null);
+
+    try {
+      await logoutRequest();
+    } finally {
+      setUser(null);
+    }
   }
 
   const value = {

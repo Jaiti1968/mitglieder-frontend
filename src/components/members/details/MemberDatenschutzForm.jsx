@@ -9,6 +9,7 @@ import { createDatenschutzDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberDatenschutzForm({
   datenschutz = {},
+  readOnly = false,
   onChange,
   onAutoSaveStart,
   onAutoSaveSuccess,
@@ -34,6 +35,7 @@ export default function MemberDatenschutzForm({
   }, [datenschutz, reset]);
 
   useAutoSaveForm({
+    enabled: !readOnly,
     control,
     isDirty,
     setError,
@@ -66,30 +68,36 @@ export default function MemberDatenschutzForm({
         control={control}
         label="Datum Datenschutz"
         error={errors.datumDatenschutz?.message}
+        disabled={readOnly}
       />
 
       <CheckboxField
         label="Datenschutz Nr. 14"
+        disabled={readOnly}
         {...register("datenschutzNr14")}
       />
 
       <CheckboxField
         label="Datenschutz Nr. 15"
+        disabled={readOnly}
         {...register("datenschutzNr15")}
       />
 
       <CheckboxField
         label="Datenschutz Nr. 16"
+        disabled={readOnly}
         {...register("datenschutzNr16")}
       />
 
       <CheckboxField
         label="Datenschutz Nr. 17"
+        disabled={readOnly}
         {...register("datenschutzNr17")}
       />
 
       <CheckboxField
         label="Datenschutz Nr. 18"
+        disabled={readOnly}
         {...register("datenschutzNr18")}
       />
     </form>

@@ -12,6 +12,7 @@ import {
   updateStammdaten,
 } from "../api/memberApi";
 import { getMemberStatuses, getVoices } from "../api/lookupApi";
+import useAuth from "../auth/useAuth";
 
 import MemberStammdatenForm from "../components/members/details/MemberStammdatenForm";
 import MemberContactForm from "../components/members/details/MemberContactForm";
@@ -32,13 +33,16 @@ export default function MemberDetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const canEdit = user?.role === "ADMIN" || user?.role === "EDITOR";
 
   const [activeTab, setActiveTab] = useState("stammdaten");
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
   const [pendingNavigationTarget, setPendingNavigationTarget] = useState(null);
 
   const autoSaveStatus = useAutoSaveStatus();
-  useUnsavedChanges(autoSaveStatus.hasUnsavedChanges);
+  useUnsavedChanges(canEdit && autoSaveStatus.hasUnsavedChanges);
 
   const {
     data: member,
@@ -159,7 +163,7 @@ export default function MemberDetailPage() {
   });
 
   function handleNavigate(event, target) {
-    if (!autoSaveStatus.hasUnsavedChanges) return;
+    if (!canEdit || !autoSaveStatus.hasUnsavedChanges) return;
 
     event.preventDefault();
     setPendingNavigationTarget(target);
@@ -218,17 +222,25 @@ export default function MemberDetailPage() {
 
       <MemberHeader member={member} />
 
-      <div className="autosave-status">
-        {autoSaveStatus.isSaving && <span>Speichere Änderungen...</span>}
+      {canEdit && (
+        <div className="autosave-status">
+          {autoSaveStatus.isSaving && <span>Speichere Änderungen...</span>}
 
-        {!autoSaveStatus.isSaving && autoSaveStatus.hasSaved && (
-          <span style={savedStyle}>✔ Gespeichert</span>
-        )}
+          {!autoSaveStatus.isSaving && autoSaveStatus.hasSaved && (
+            <span style={savedStyle}>✔ Gespeichert</span>
+          )}
 
-        {autoSaveStatus.hasSaveError && (
-          <ErrorBox message="Speichern fehlgeschlagen. Bitte die Seite nicht verlassen." />
-        )}
-      </div>
+          {autoSaveStatus.hasSaveError && (
+            <ErrorBox message="Speichern fehlgeschlagen. Bitte die Seite nicht verlassen." />
+          )}
+        </div>
+      )}
+
+      {!canEdit && (
+        <p style={readOnlyNoticeStyle}>
+          Nur-Lese-Modus: Du kannst die Daten ansehen, aber nicht bearbeiten.
+        </p>
+      )}
 
       <MemberTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -237,22 +249,35 @@ export default function MemberDetailPage() {
           title="Stammdaten"
           isEditing={true}
           errorMessage={
-            updateStammdatenMutation.error?.validationErrors?.length
+            canEdit && updateStammdatenMutation.error?.validationErrors?.length
               ? null
-              : updateStammdatenMutation.error?.message
+              : canEdit
+                ? updateStammdatenMutation.error?.message
+                : null
           }
-          isSaving={updateStammdatenMutation.isPending}
+          isSaving={canEdit && updateStammdatenMutation.isPending}
           form={
             <MemberStammdatenForm
               stammdaten={stammdaten}
+              readOnly={!canEdit}
               onChange={(formData) =>
-                updateStammdatenMutation.mutateAsync(formData)
+                canEdit
+                  ? updateStammdatenMutation.mutateAsync(formData)
+                  : Promise.resolve()
               }
-              onAutoSaveStart={() => autoSaveStatus.markSaving("stammdaten")}
-              onAutoSaveSuccess={() => autoSaveStatus.markSaved("stammdaten")}
-              onAutoSaveError={() => autoSaveStatus.markFailed("stammdaten")}
-              serverError={updateStammdatenMutation.error}
-              onClearServerError={() => updateStammdatenMutation.reset()}
+              onAutoSaveStart={() =>
+                canEdit && autoSaveStatus.markSaving("stammdaten")
+              }
+              onAutoSaveSuccess={() =>
+                canEdit && autoSaveStatus.markSaved("stammdaten")
+              }
+              onAutoSaveError={() =>
+                canEdit && autoSaveStatus.markFailed("stammdaten")
+              }
+              serverError={canEdit ? updateStammdatenMutation.error : null}
+              onClearServerError={() =>
+                canEdit && updateStammdatenMutation.reset()
+              }
             />
           }
         />
@@ -263,22 +288,35 @@ export default function MemberDetailPage() {
           title="Kontakt"
           isEditing={true}
           errorMessage={
-            updateKontaktMutation.error?.validationErrors?.length
+            canEdit && updateKontaktMutation.error?.validationErrors?.length
               ? null
-              : updateKontaktMutation.error?.message
+              : canEdit
+                ? updateKontaktMutation.error?.message
+                : null
           }
-          isSaving={updateKontaktMutation.isPending}
+          isSaving={canEdit && updateKontaktMutation.isPending}
           form={
             <MemberContactForm
               kontakt={kontakt}
+              readOnly={!canEdit}
               onChange={(formData) =>
-                updateKontaktMutation.mutateAsync(formData)
+                canEdit
+                  ? updateKontaktMutation.mutateAsync(formData)
+                  : Promise.resolve()
               }
-              onAutoSaveStart={() => autoSaveStatus.markSaving("kontakt")}
-              onAutoSaveSuccess={() => autoSaveStatus.markSaved("kontakt")}
-              onAutoSaveError={() => autoSaveStatus.markFailed("kontakt")}
-              serverError={updateKontaktMutation.error}
-              onClearServerError={() => updateKontaktMutation.reset()}
+              onAutoSaveStart={() =>
+                canEdit && autoSaveStatus.markSaving("kontakt")
+              }
+              onAutoSaveSuccess={() =>
+                canEdit && autoSaveStatus.markSaved("kontakt")
+              }
+              onAutoSaveError={() =>
+                canEdit && autoSaveStatus.markFailed("kontakt")
+              }
+              serverError={canEdit ? updateKontaktMutation.error : null}
+              onClearServerError={() =>
+                canEdit && updateKontaktMutation.reset()
+              }
             />
           }
         />
@@ -289,30 +327,38 @@ export default function MemberDetailPage() {
           title="Mitgliedschaft"
           isEditing={true}
           errorMessage={
+            canEdit &&
             updateMitgliedschaftMutation.error?.validationErrors?.length
               ? null
-              : updateMitgliedschaftMutation.error?.message
+              : canEdit
+                ? updateMitgliedschaftMutation.error?.message
+                : null
           }
-          isSaving={updateMitgliedschaftMutation.isPending}
+          isSaving={canEdit && updateMitgliedschaftMutation.isPending}
           form={
             <MemberMembershipForm
               mitgliedschaft={mitgliedschaft}
               statuses={statuses}
               voices={voices}
+              readOnly={!canEdit}
               onChange={(formData) =>
-                updateMitgliedschaftMutation.mutateAsync(formData)
+                canEdit
+                  ? updateMitgliedschaftMutation.mutateAsync(formData)
+                  : Promise.resolve()
               }
               onAutoSaveStart={() =>
-                autoSaveStatus.markSaving("mitgliedschaft")
+                canEdit && autoSaveStatus.markSaving("mitgliedschaft")
               }
               onAutoSaveSuccess={() =>
-                autoSaveStatus.markSaved("mitgliedschaft")
+                canEdit && autoSaveStatus.markSaved("mitgliedschaft")
               }
               onAutoSaveError={() =>
-                autoSaveStatus.markFailed("mitgliedschaft")
+                canEdit && autoSaveStatus.markFailed("mitgliedschaft")
               }
-              serverError={updateMitgliedschaftMutation.error}
-              onClearServerError={() => updateMitgliedschaftMutation.reset()}
+              serverError={canEdit ? updateMitgliedschaftMutation.error : null}
+              onClearServerError={() =>
+                canEdit && updateMitgliedschaftMutation.reset()
+              }
             />
           }
         />
@@ -323,11 +369,13 @@ export default function MemberDetailPage() {
           title="Datenschutz"
           isEditing={true}
           errorMessage={
-            updateDatenschutzMutation.error?.validationErrors?.length
+            canEdit && updateDatenschutzMutation.error?.validationErrors?.length
               ? null
-              : updateDatenschutzMutation.error?.message
+              : canEdit
+                ? updateDatenschutzMutation.error?.message
+                : null
           }
-          isSaving={updateDatenschutzMutation.isPending}
+          isSaving={canEdit && updateDatenschutzMutation.isPending}
           form={
             <>
               {isDatenschutzLoading && <p>Lade Datenschutz...</p>}
@@ -341,20 +389,25 @@ export default function MemberDetailPage() {
               {!isDatenschutzLoading && !isDatenschutzError && (
                 <MemberDatenschutzForm
                   datenschutz={datenschutz}
+                  readOnly={!canEdit}
                   onChange={(formData) =>
-                    updateDatenschutzMutation.mutateAsync(formData)
+                    canEdit
+                      ? updateDatenschutzMutation.mutateAsync(formData)
+                      : Promise.resolve()
                   }
                   onAutoSaveStart={() =>
-                    autoSaveStatus.markSaving("datenschutz")
+                    canEdit && autoSaveStatus.markSaving("datenschutz")
                   }
                   onAutoSaveSuccess={() =>
-                    autoSaveStatus.markSaved("datenschutz")
+                    canEdit && autoSaveStatus.markSaved("datenschutz")
                   }
                   onAutoSaveError={() =>
-                    autoSaveStatus.markFailed("datenschutz")
+                    canEdit && autoSaveStatus.markFailed("datenschutz")
                   }
-                  serverError={updateDatenschutzMutation.error}
-                  onClearServerError={() => updateDatenschutzMutation.reset()}
+                  serverError={canEdit ? updateDatenschutzMutation.error : null}
+                  onClearServerError={() =>
+                    canEdit && updateDatenschutzMutation.reset()
+                  }
                 />
               )}
             </>
@@ -367,11 +420,14 @@ export default function MemberDetailPage() {
           title="Chorkleidung"
           isEditing={true}
           errorMessage={
+            canEdit &&
             updateChorkleidungMutation.error?.validationErrors?.length
               ? null
-              : updateChorkleidungMutation.error?.message
+              : canEdit
+                ? updateChorkleidungMutation.error?.message
+                : null
           }
-          isSaving={updateChorkleidungMutation.isPending}
+          isSaving={canEdit && updateChorkleidungMutation.isPending}
           form={
             <>
               {isChorkleidungLoading && <p>Lade Chorkleidung...</p>}
@@ -385,20 +441,27 @@ export default function MemberDetailPage() {
               {!isChorkleidungLoading && !isChorkleidungError && (
                 <MemberChorkleidungForm
                   chorkleidung={chorkleidung}
+                  readOnly={!canEdit}
                   onChange={(formData) =>
-                    updateChorkleidungMutation.mutateAsync(formData)
+                    canEdit
+                      ? updateChorkleidungMutation.mutateAsync(formData)
+                      : Promise.resolve()
                   }
                   onAutoSaveStart={() =>
-                    autoSaveStatus.markSaving("chorkleidung")
+                    canEdit && autoSaveStatus.markSaving("chorkleidung")
                   }
                   onAutoSaveSuccess={() =>
-                    autoSaveStatus.markSaved("chorkleidung")
+                    canEdit && autoSaveStatus.markSaved("chorkleidung")
                   }
                   onAutoSaveError={() =>
-                    autoSaveStatus.markFailed("chorkleidung")
+                    canEdit && autoSaveStatus.markFailed("chorkleidung")
                   }
-                  serverError={updateChorkleidungMutation.error}
-                  onClearServerError={() => updateChorkleidungMutation.reset()}
+                  serverError={
+                    canEdit ? updateChorkleidungMutation.error : null
+                  }
+                  onClearServerError={() =>
+                    canEdit && updateChorkleidungMutation.reset()
+                  }
                 />
               )}
             </>
@@ -408,3 +471,12 @@ export default function MemberDetailPage() {
     </main>
   );
 }
+
+const readOnlyNoticeStyle = {
+  margin: "0.75rem 0 1rem",
+  padding: "0.75rem 1rem",
+  border: "1px solid #d1d5db",
+  borderRadius: "8px",
+  backgroundColor: "#f9fafb",
+  color: "#374151",
+};

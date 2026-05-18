@@ -10,6 +10,7 @@ import { createStammdatenDefaults } from "../../../utils/forms/defaults";
 
 export default function MemberStammdatenForm({
   stammdaten = {},
+  readOnly = false,
   onChange,
   onAutoSaveStart,
   onAutoSaveSuccess,
@@ -39,6 +40,7 @@ export default function MemberStammdatenForm({
   }, [stammdaten, reset]);
 
   useAutoSaveForm({
+    enabled: !readOnly,
     control,
     isDirty,
     setError,
@@ -68,6 +70,8 @@ export default function MemberStammdatenForm({
   });
 
   function handleTypeChange(type) {
+    if (readOnly) return;
+
     const nextIsFirma = type === "firma";
 
     setValue("personFirma", nextIsFirma, {
@@ -101,6 +105,7 @@ export default function MemberStammdatenForm({
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
             type="button"
+            disabled={readOnly}
             style={!isFirma ? activeButtonStyle : undefined}
             className={isFirma ? "secondary" : ""}
             onClick={() => handleTypeChange("person")}
@@ -110,6 +115,7 @@ export default function MemberStammdatenForm({
 
           <button
             type="button"
+            disabled={readOnly}
             style={isFirma ? activeButtonStyle : undefined}
             className={!isFirma ? "secondary" : ""}
             onClick={() => handleTypeChange("firma")}
@@ -135,6 +141,7 @@ export default function MemberStammdatenForm({
           optionValueKey="value"
           optionLabelKey="label"
           includePlaceholder={false}
+          disabled={readOnly}
           {...register("anrede")}
         />
       )}
@@ -143,6 +150,7 @@ export default function MemberStammdatenForm({
         <TitleField
           value={values?.akademischerTitel ?? ""}
           error={errors.akademischerTitel?.message}
+          disabled={readOnly}
           onChange={(value) =>
             setValue("akademischerTitel", value, {
               shouldDirty: true,
@@ -155,6 +163,7 @@ export default function MemberStammdatenForm({
       <FormField
         label={isFirma ? "Firmenzusatz" : "Vorname"}
         error={errors.vorname?.message}
+        disabled={readOnly}
         {...register("vorname")}
       />
 
@@ -162,6 +171,7 @@ export default function MemberStammdatenForm({
         label={isFirma ? "Firmenname" : "Nachname"}
         required
         error={errors.nachname?.message}
+        disabled={readOnly}
         {...register("nachname")}
       />
 
@@ -171,23 +181,35 @@ export default function MemberStammdatenForm({
           control={control}
           label="Geburtsdatum"
           error={errors.geburtsdatum?.message}
+          disabled={readOnly}
         />
       )}
 
       <FormField
         label="Straße / Hausnr."
         error={errors.strasseHausNr?.message}
+        disabled={readOnly}
         {...register("strasseHausNr")}
       />
 
-      <FormField label="PLZ" error={errors.plz?.message} {...register("plz")} />
+      <FormField
+        label="PLZ"
+        error={errors.plz?.message}
+        disabled={readOnly}
+        {...register("plz")}
+      />
 
-      <FormField label="Ort" error={errors.ort?.message} {...register("ort")} />
+      <FormField
+        label="Ort"
+        error={errors.ort?.message}
+        disabled={readOnly}
+        {...register("ort")}
+      />
     </form>
   );
 }
 
-function TitleField({ value, onChange, error }) {
+function TitleField({ value, onChange, error, disabled = false }) {
   const predefinedTitles = ["Dr.", "Prof."];
   const selectedValue = predefinedTitles.includes(value) ? value : "";
 
@@ -198,6 +220,7 @@ function TitleField({ value, onChange, error }) {
       <div>
         <div style={titleInputWrapperStyle}>
           <select
+            disabled={disabled}
             value={selectedValue}
             onChange={(event) => onChange(event.target.value)}
           >
@@ -208,6 +231,7 @@ function TitleField({ value, onChange, error }) {
 
           <input
             type="text"
+            disabled={disabled}
             placeholder="oder frei eingeben"
             value={selectedValue ? "" : value}
             onChange={(event) => onChange(event.target.value)}

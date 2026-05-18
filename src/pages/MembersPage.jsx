@@ -7,11 +7,15 @@ import Pagination from "../components/members/list/Pagination";
 import MemberList from "../components/members/list/MemberList";
 import MemberFilterPanel from "../components/members/list/MemberFilterPanel";
 import ResultInfo from "../components/members/list/ResultInfo";
+import useAuth from "../auth/useAuth";
 
 const PAGE_SIZE = 20;
 
 export default function MembersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+
+  const canCreateMember = user?.role === "ADMIN" || user?.role === "EDITOR";
 
   const search = searchParams.get("search") || "";
   const statusIds = searchParams.getAll("statusId");
@@ -98,13 +102,15 @@ export default function MembersPage() {
 
   return (
     <main>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+      <div style={pageHeaderStyle}>
         <h1 style={{ margin: 0 }}>Mitglieder</h1>
 
-        <Link to="/members/new">
-          <button type="button">+ Neues Mitglied</button>
-      </Link>
-    </div>
+        {canCreateMember && (
+          <Link to="/members/new">
+            <button type="button">+ Neues Mitglied</button>
+          </Link>
+        )}
+      </div>
 
       <MemberFilterPanel
         search={search}
@@ -148,3 +154,10 @@ export default function MembersPage() {
     </main>
   );
 }
+
+const pageHeaderStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "1rem",
+};
