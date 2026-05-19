@@ -23,6 +23,12 @@ export default function AppLayout() {
         </Link>
 
         <div style={rightAreaStyle}>
+          {user?.role === "ADMIN" && (
+            <Link to="/admin/users" style={navLinkStyle}>
+              Benutzer
+            </Link>
+          )}
+
           <div style={userInfoStyle}>
             <span>{user?.username}</span>
             <span style={roleStyle}>{user?.role}</span>
@@ -87,4 +93,19 @@ const logoutButtonStyle = {
 
 const contentStyle = {
   padding: "1.25rem",
+};
+
+const navLinkStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0.45rem 0.8rem",
+  border: "1px solid #d1d5db",
+  borderRadius: "6px",
+  backgroundColor: "#ffffff",
+  color: "#1f2937",
+  textDecoration: "none",
+  cursor: "pointer",
+  font: "inherit",
+  lineHeight: 1.2,
 };

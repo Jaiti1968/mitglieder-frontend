@@ -215,9 +215,9 @@ export default function MemberDetailPage() {
       <Link
         to={backTarget}
         onClick={(event) => handleNavigate(event, backTarget)}
-        style={{ display: "inline-block", marginBottom: "1rem" }}
+        style={backLinkStyle}
       >
-        ← Zurück zur Liste
+        ← Zur Mitgliederliste
       </Link>
 
       <MemberHeader member={member} />
@@ -479,4 +479,12 @@ const readOnlyNoticeStyle = {
   borderRadius: "8px",
   backgroundColor: "#f9fafb",
   color: "#374151",
+};
+
+const backLinkStyle = {
+  display: "inline-block",
+  marginBottom: "1rem",
+  color: "#2563eb",
+  textDecoration: "none",
+  fontWeight: 600,
 };

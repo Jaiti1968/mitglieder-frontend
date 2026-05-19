@@ -5,6 +5,7 @@ import MemberDetailPage from "../pages/MemberDetailPage";
 import CreateMemberPage from "../pages/CreateMemberPage";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import AppLayout from "../components/layouts/AppLayout";
+import AdminUsersPage from "../pages/AdminUsersPage";
 
 export default function AppRoutes() {
   return (
@@ -26,6 +27,8 @@ export default function AppRoutes() {
           path="/members/:mitgliedsnummer"
           element={<MemberDetailPage />}
         />
+
+        <Route path="/admin/users" element={<AdminUsersPage />} />
       </Route>
     </Routes>
   );
