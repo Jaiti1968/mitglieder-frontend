@@ -1,192 +1,551 @@
-# EMC Mitgliederverwaltung Frontend
+# EMC Mitgliederverwaltung – Frontend Developer Guide
 
-## Projektüberblick
+## Zweck
 
-Das Frontend der EMC Mitgliederverwaltung ist eine Single-Page-Webanwendung zur Verwaltung von Mitgliederdaten. Es kommuniziert mit einem Spring-Boot-Backend über REST APIs und bildet die fachlichen Prozesse rund um Mitgliederpflege, Neuanlage, Suche und Detailbearbeitung ab.
+Dieses Dokument beschreibt die technische Architektur und Entwicklungsrichtlinien des Frontends.
 
-## Ziele
+Zielgruppe:
 
-- Verwaltung von Mitgliedern in einer browserbasierten Oberfläche
-- Schnelle Suche und Filterung
-- Bearbeitung in fachlich getrennten Formularbereichen
-- Automatisches Speichern von Änderungen
-- Schutz vor unbeabsichtigtem Verlassen bei ungespeicherten Änderungen
-- Klare Trennung von UI, Formularlogik, Validierung und API-Kommunikation
+- Frontend-Entwicklung
+- Backend-Entwicklung mit Frontend-Schnittstellenbezug
+- technische Weiterentwicklung
+
+Dieses Dokument ist kein Benutzerhandbuch.
 
 ---
 
-# Tech Stack
+# Technologie Stack
 
-## Framework / Runtime
+## Core
 
 - React 19
 - Vite
-- React Router DOM
-- React Hook Form
+- JavaScript
+
+## Routing
+
+- React Router
+
+## State / Server State
+
 - TanStack React Query
 
-## Qualität / Tooling
+## Formulare
 
-- ESLint
-- Prettier
+- React Hook Form
+
+## Tests
+
 - Vitest
 
-## Backend-Anbindung
+## Deployment
 
-- REST API (Spring Boot Backend)
-- Session-/Basic-Auth abhängig vom Backend-Setup
+- Docker
+
+---
+
+# Architekturüberblick
+
+Grundstruktur:
+
+```text
+Pages
+→ Feature Components
+→ Shared Components
+→ Hooks
+→ API Layer
+→ Spring Boot Backend
+```
+
+Designprinzipien:
+
+- klare Verantwortlichkeiten
+- Wiederverwendung
+- kleine Komponenten
+- API-Zugriffe zentral
+- Formularlogik entkoppelt
+- Backend als Source of Truth
 
 ---
 
 # Projektstruktur
 
 ```text
-src/
-  api/
-    apiClient.js
-    lookupApi.js
-    memberApi.js
-
-  auth/
-    authStorage.js
-    ProtectedRoute.jsx
-
-  components/
-    common/
-    forms/
-    layouts/
-    members/
-      details/
-      list/
-
-  hooks/
-    useAutoSaveStatus.js
-    useUnsavedChanges.js
-
-  pages/
-    CreateMemberPage.jsx
-    LoginPage.jsx
-    MemberDetailPage.jsx
-    MembersPage.jsx
-
-  routes/
-    AppRoutes.jsx
-
-  utils/
-    forms/
-      backendErrorMapper.js
-      dateHelpers.js
-      validationHelpers.js
-      defaults/
-      payloads/
-      validators/
+src
+├── api
+├── auth
+├── components
+│   ├── common
+│   ├── forms
+│   ├── layouts
+│   └── members
+├── hooks
+│   └── forms
+├── pages
+├── routes
+├── utils
+│   └── forms
+└── tests
 ```
 
 ---
 
-# Architektur
+# Routing
 
-## Routing
+Definition:
 
-### Öffentliche Route
+```text
+src/routes/AppRoutes.jsx
+```
 
-- LoginPage
+Aktuelle Routen:
 
-### Geschützte Routen
+```text
+/login
+/members
+/members/new
+/members/:mitgliedsnummer
+/admin/users
+```
 
-Über `ProtectedRoute.jsx`:
+---
 
-- Mitgliederliste
-- Mitglied anlegen
-- Mitglied bearbeiten
+## Routing-Regeln
 
-## Layout
+Geschützte Routen laufen über:
 
-`AppLayout.jsx`
+```text
+ProtectedRoute
+```
 
-- Grundlayout
-- Navigation / Seitenrahmen
-- gemeinsame Darstellung
+Layout:
+
+```text
+AppLayout
+```
+
+Öffentliche Route:
+
+```text
+/login
+```
+
+Geschützt:
+
+```text
+/members
+/members/new
+/members/:mitgliedsnummer
+/admin/users
+```
+
+---
+
+# Auth Architektur
+
+Ordner:
+
+```text
+src/auth
+```
+
+Komponenten:
+
+- `AuthProvider`
+- `ProtectedRoute`
+- `useAuth`
+
+---
+
+## AuthProvider
+
+Verantwortung:
+
+- Session Restore
+- User State
+- Login
+- Logout
+- Loading State
+
+Backend-Endpunkte:
+
+```http
+POST /api/auth/login
+POST /api/auth/logout
+GET /api/auth/me
+```
+
+---
+
+## ProtectedRoute
+
+Verhindert Zugriff ohne Session.
+
+Verhalten:
+
+keine Session:
+
+```text
+redirect → /login
+```
+
+Session vorhanden:
+
+```text
+Render geschützter Bereich
+```
+
+---
+
+## useAuth
+
+Zentrale API:
+
+```javascript
+const { user, login, logout, isAuthenticated, isLoading } = useAuth();
+```
+
+---
+
+# Rollenmodell
+
+Unterstützte Rollen:
+
+```text
+ADMIN
+EDITOR
+VIEWER
+```
+
+---
+
+## UI Verhalten
+
+### ADMIN
+
+Vollzugriff:
+
+- lesen
+- anlegen
+- bearbeiten
+- löschen
+- Benutzerverwaltung
+
+---
+
+### EDITOR
+
+Erlaubt:
+
+- lesen
+- anlegen
+- bearbeiten
+
+Nicht erlaubt:
+
+- löschen
+- Benutzerverwaltung
+
+---
+
+### VIEWER
+
+Nur ReadOnly.
+
+Keine Änderungen.
 
 ---
 
 # API Layer
 
-## apiClient.js
+Ordner:
 
-Zentrale HTTP-Kommunikation:
+```text
+src/api
+```
 
-- Basis-Konfiguration
-- Header
-- Authentifizierungsweitergabe
-- Fehlerhandling
+Aktuelle Module:
 
-## memberApi.js
-
-Mitglieder-Endpunkte:
-
-- Mitgliederliste laden
-- Mitglied laden
-- Mitglied anlegen
-- Teilbereiche aktualisieren
-
-## lookupApi.js
-
-Referenzdaten:
-
-- Mitgliederstatus
-- Stimmen
-- weitere Select-Daten
+- `authApi.js`
+- `memberApi.js`
+- `lookupApi.js`
+- `adminUserApi.js`
 
 ---
 
-# Authentifizierung
+## Regeln
 
-## authStorage.js
+API-Aufrufe nur hier.
 
-Verantwortlich für:
+Keine direkten Fetch-Aufrufe in Pages/Components.
 
-- Persistenz Login-Daten
-- Token / Credentials Speicherung
-- Logout-Bereinigung
+Beispiel:
 
-## ProtectedRoute.jsx
+gut:
 
-Blockiert Zugriff auf geschützte Seiten ohne Authentifizierung.
+```javascript
+await login(credentials);
+```
 
----
+schlecht:
 
-# Seiten
-
-## MembersPage
-
-Funktion:
-Mitgliederübersicht
-
-Features:
-
-- Suche
-- Filter
-- Paging
-- Ergebnisanzeige
-- Navigation zu Detailseite
-- Navigation zur Neuanlage
-
-Verwendete Komponenten:
-
-- MemberFilterPanel
-- MemberList
-- Pagination
-- ResultInfo
+```javascript
+fetch("/api/auth/login");
+```
 
 ---
 
-## MemberDetailPage
+# React Query
 
-Funktion:
-Detailbearbeitung eines Mitglieds
+Verwendung für:
+
+- Member Daten
+- Lookup Daten
+- Admin User Daten
+
+Verantwortung:
+
+- Caching
+- Refetch
+- Loading States
+- Mutation Handling
+
+---
+
+## Regeln
+
+Serverdaten niemals manuell global spiegeln.
+
+React Query ist Source of Truth.
+
+---
+
+# Pages
+
+Ordner:
+
+```text
+src/pages
+```
+
+Aktuell:
+
+- `LoginPage`
+- `MembersPage`
+- `MemberDetailPage`
+- `CreateMemberPage`
+- `AdminUsersPage`
+
+---
+
+## Verantwortlichkeit
+
+Pages:
+
+- Seitennavigation
+- Daten laden
+- Seitenlayout
+- Containerlogik
+
+Keine komplexe Formularlogik.
+
+---
+
+# Components
+
+## Shared Components
+
+Ordner:
+
+```text
+src/components/common
+```
+
+Beispiele:
+
+- ErrorBox
+- EnvironmentBadge
+
+---
+
+## Layout Components
+
+Ordner:
+
+```text
+src/components/layouts
+```
+
+Aktuell:
+
+- AppLayout
+
+---
+
+## Feature Components
+
+Ordner:
+
+```text
+src/components/members
+```
+
+Mitglieder-bezogene Komponenten.
+
+---
+
+# Form Architektur
+
+## Shared Form Components
+
+Ordner:
+
+```text
+src/components/forms
+```
+
+Aktuell:
+
+- `FormField`
+- `SelectField`
+- `CheckboxField`
+- `DateField`
+
+---
+
+## Regeln
+
+Neue Form Controls zuerst hier prüfen.
+
+Keine redundanten Feldkomponenten erzeugen.
+
+---
+
+# React Hook Form
+
+Verwendung in Formularen.
+
+Pattern:
+
+```javascript
+useForm({
+  mode: "onChange",
+});
+```
+
+---
+
+## Regeln
+
+Validierung zentral.
+
+Keine verstreute Inline-Validierungslogik.
+
+---
+
+# AutoSave Architektur
+
+Zentrale Hook:
+
+```text
+src/hooks/forms/useAutoSaveForm.js
+```
+
+---
+
+## Verantwortung
+
+- Watch Formularzustand
+- Debounce
+- Validation
+- Payload Build
+- Save Trigger
+- Serverfehler Mapping
+- Success/Error Handling
+
+---
+
+## Pattern
+
+Form:
+
+```javascript
+useAutoSaveForm({
+  control,
+  validate,
+  buildPayload,
+});
+```
+
+---
+
+## Regeln
+
+Neue AutoSave Formulare müssen diese Hook nutzen.
+
+Keine individuelle Debounce-Logik pro Formular.
+
+---
+
+# Form Utilities
+
+Ordner:
+
+```text
+src/utils/forms
+```
 
 Bereiche:
+
+- validators
+- payloads
+- defaults
+- validationHelpers
+- dateHelpers
+
+---
+
+## validators
+
+Fachliche Frontend-Validierung.
+
+Beispiele:
+
+- `validateStammdaten`
+- `validateKontakt`
+- `validateMitgliedschaft`
+- `validateDatenschutz`
+- `validateChorkleidung`
+
+---
+
+## payloads
+
+Form → Backend DTO Mapping.
+
+---
+
+## defaults
+
+Initialwerte / Reset Mapping.
+
+---
+
+## dateHelpers
+
+Datumsverarbeitung.
+
+---
+
+## validationHelpers
+
+gemeinsame Hilfsfunktionen.
+
+---
+
+# Member Detail Architektur
+
+Tabs:
 
 - Stammdaten
 - Kontakt
@@ -194,400 +553,102 @@ Bereiche:
 - Datenschutz
 - Chorkleidung
 
-Features:
+Form-Komponenten:
 
-- Laden des Mitglieds
-- Lookup-Daten
-- Tab-Steuerung
-- Autosave
-- Fehlerbehandlung
-- Unsaved Changes Schutz
-
----
-
-## CreateMemberPage
-
-Funktion:
-Neuanlage eines Mitglieds
-
-Features:
-
-- Default-Werte
-- Validierung
-- Backend POST
-- Navigation nach Erfolg
+- `MemberStammdatenForm`
+- `MemberContactForm`
+- `MemberMembershipForm`
+- `MemberDatenschutzForm`
+- `MemberChorkleidungForm`
 
 ---
 
-## LoginPage
+## Rollensteuerung
 
-Authentifizierung für Anwendung.
+ReadOnly wird über Props gesteuert:
 
----
+```javascript
+readOnly={true}
+```
 
-# Komponentenarchitektur
-
-## Common Components
-
-### ErrorBox
-
-Zentrale Fehlerdarstellung
-
-### EnvironmentBadge
-
-Anzeige der aktiven Umgebung
-
-### UnsavedChangesDialog
-
-Dialog bei ungespeicherten Änderungen
+VIEWER darf niemals editieren.
 
 ---
 
-## Form Components
+# Admin User Management
 
-### FormField
+Page:
 
-Standard Text-/Input-Komponente
+```text
+AdminUsersPage
+```
 
-### DateField
+API:
 
-Spezialisierte Datumseingabe
+```text
+adminUserApi.js
+```
 
-- deutsches Datumsformat
-- Integration mit RHF
+Nur ADMIN.
 
-### CheckboxField
+Funktionen:
 
-Checkbox-Abstraktion
-
-### SelectField
-
-Select-Komponente für Lookup-Werte
-
----
-
-## Member Detail Forms
-
-### MemberStammdatenForm
-
-Felder:
-
-- Person/Firma
-- Vorname
-- Nachname/Firmenname
-- Anschrift
-- PLZ/Ort
-- Geburtsdaten / weitere Stammdaten je Backend-Modell
-
-### MemberContactForm
-
-Felder:
-
-- Telefon
-- Mobil
-- E-Mail
-- Adresszusatz etc.
-
-### MemberMembershipForm
-
-Felder:
-
-- Eintritt
-- Austritt
-- Mitgliederstatus
-- Stimme
-
-### MemberDatenschutzForm
-
-Felder:
-
-- Datenschutzdatum / Einwilligungsdaten
-
-### MemberChorkleidungForm
-
-Felder:
-
-- Übergabe
-- Rückgabe
-- Sommerkleidung
-- Kaufpreis
-
----
-
-# Formulararchitektur
-
-## Prinzip
-
-Jeder Formularbereich folgt derselben Struktur:
-
-1. Default Values
-2. React Hook Form
-3. Validator
-4. Payload Mapping
-5. Autosave / Submit Callback
-
-## Defaults
-
-Unter:
-`src/utils/forms/defaults`
-
-Beispiele:
-
-- createStammdatenDefaults
-- createMembershipDefaults
-- createContactDefaults
-
-## Payload Builder
-
-Unter:
-`src/utils/forms/payloads`
-
-Aufgabe:
-Frontend-Modell → Backend DTO
-
-## Validatoren
-
-Unter:
-`src/utils/forms/validators`
-
-Aufgabe:
-fachliche Validierung ohne UI-Abhängigkeit
-
----
-
-# Validierungskonzept
-
-## validationHelpers.js
-
-Generische Regeln:
-
-- Required
-- MaxLength
-- Email
-- Postal Code
-- Complete Date
-- Date Range
-- Not Future Date
-
-## dateHelpers.js
-
-Datumslogik:
-
-- Vollständigkeit
-- Datumsvergleich
-- Zukunftsprüfung
-
-## Fachvalidatoren
-
-- stammdatenValidator
-- contactValidator
-- membershipValidator
-- datenschutzValidator
-- chorkleidungValidator
-
-Designziel:
-Keine Businesslogik in Komponenten.
-
----
-
-# State Management
-
-## React Hook Form
-
-Für Formularzustand:
-
-- register
-- Controller
-- validation state
-- dirty state
-- reset
-- setError
-
-## React Query
-
-Für Serverkommunikation:
-
-- Queries
-- Mutations
-- Caching
-- Refetching
-
----
-
-# Custom Hooks
-
-## useAutoSaveStatus
-
-Verantwortung:
-Statusmodell für Speichern
-
-Typische States:
-
-- saving
-- saved
-- error
-- unsaved
-
-## useUnsavedChanges
-
-Verhindert unbeabsichtigtes Verlassen:
-
-- Browser Navigation
-- interne Navigation
-- Dialogintegration
+- Benutzerliste
+- Anlegen
+- Rolle ändern
+- aktiv/inaktiv
+- Passwort setzen
 
 ---
 
 # Fehlerbehandlung
 
-## Backend Fehler
+## API Fehler
 
-Mapping über:
-`backendErrorMapper.js`
-
-Ziel:
-Backend Validation Errors → RHF Fehler
-
-## UI Fehler
-
-Anzeige über:
+Anzeige:
 
 - ErrorBox
 - Formularfeldfehler
 
 ---
 
-# Datenfluss
+## Login Fehler
 
-## Bearbeitung Mitglied
-
-1. MemberDetailPage lädt Mitglied
-2. Daten werden in Formular transformiert
-3. RHF verwaltet State
-4. Validator prüft
-5. Payload Builder erstellt DTO
-6. Mutation sendet Update
-7. UI aktualisiert Status
-
-## Neuanlage
-
-1. Default Model
-2. Eingabe
-3. Validierung
-4. DTO Mapping
-5. POST
-6. Redirect
-
----
-
-# Entwicklung
-
-## Installation
-
-```bash
-npm install
-```
-
-## Development Server
-
-```bash
-npm run dev
-```
-
-## Build
-
-```bash
-npm run build
-```
-
-## Preview
-
-```bash
-npm run preview
-```
-
-## Lint
-
-```bash
-npm run lint
-```
-
-## Tests
-
-Watch-Modus:
-
-```bash
-npm run test
-```
-
-Einmaliger Lauf:
-
-```bash
-npm run test:run
-```
-
----
-
-# Backend Erwartungen
-
-Das Frontend erwartet ein kompatibles Spring-Boot-Backend mit:
-
-## Mitglieder API
-
-Beispiel:
-
-- GET /api/members
-- GET /api/members/{id}
-- POST /api/members
-- PUT/PATCH Teilupdates
-
-## Lookup API
-
-- Mitgliederstatus
-- Stimmen
-
-## Fehlerformat
-
-Validierungsfehler sollten feldbezogen zurückgegeben werden.
-
----
-
-# Deployment
-
-Geeignet für:
-
-- statisches Vite Build Deployment
-- nginx
-- Docker
-- Reverse Proxy Setup
-
-Build Output:
+Neutral:
 
 ```text
-dist/
-```
-
-Beispiel nginx root:
-
-```text
-/usr/share/nginx/html
+Anmeldung nicht möglich.
 ```
 
 ---
 
-# Qualitätsstatus
+## Rollenfehler
+
+Backend liefert:
+
+```http
+403
+```
+
+UI blendet Funktionen idealerweise vorher aus.
+
+---
+
+# Testing
+
+Framework:
+
+```text
+Vitest
+```
 
 Aktueller Stand:
 
-- strukturierte Formulararchitektur
-- zentrale Validatoren
-- zentrale Payload Builder
-- Lookup API Trennung
-- Routing Protection
-- produktiv integrierte Vitest Unit Tests
-- 64 erfolgreiche Unit Tests
+```text
+64 Tests
+```
 
-Abgedeckte Testbereiche:
+Abgedeckt:
 
 - validationHelpers
 - dateHelpers
@@ -597,30 +658,164 @@ Abgedeckte Testbereiche:
 - datenschutzValidator
 - chorkleidungValidator
 
-Empfohlene nächste Schritte:
+---
 
-- Component Tests
-- Integration Tests
-- API Mock Tests
-- CI Pipeline
+## Teststrategie
+
+Frontend Fokus:
+
+- Formularlogik
+- Validatoren
+- Helper
+
+Nicht primär:
+
+- visuelle Snapshot Tests
+- komplexe UI Integration
 
 ---
 
-# Architekturprinzipien
+# Entwicklungsworkflow
 
-Projektentscheidungen:
+Branching Pattern:
 
-- Fachlogik nicht in Komponenten
-- Validatoren separat
-- Payload Mapping separat
-- RHF für Formulare
-- React Query für Serverstate
-- Wiederverwendbare Form-Komponenten
-- geschützte Routen
-- explizite Fehlerbehandlung
+Feature:
+
+```text
+feature/*
+```
+
+Refactoring:
+
+```text
+refactor/*
+```
+
+Docs:
+
+```text
+docs/*
+```
 
 ---
 
-# Hinweise
+## Beispiel
 
-Die Dokumentation beschreibt den aktuellen Frontend-Masterstand. Backend-Verträge müssen synchron zur Backend-Implementierung gehalten werden.
+```text
+feature/security-hardening
+refactor/forms
+docs/readme-update-phase3
+```
+
+---
+
+# Entwicklungsregeln
+
+## Komponenten
+
+Bevorzugt:
+
+- kleine Komponenten
+- klarer Scope
+- Wiederverwendung
+
+Vermeiden:
+
+- Monster-Komponenten
+- doppelte Logik
+
+---
+
+## State
+
+Lokal:
+
+UI State
+
+React Query:
+
+Server State
+
+AuthProvider:
+
+Session/Auth State
+
+---
+
+## API
+
+Keine Fetch-Aufrufe direkt in Components.
+
+---
+
+## Validierung
+
+Backend bleibt Source of Truth.
+
+Frontend validiert primär UX-orientiert.
+
+---
+
+## Security
+
+Keine Sicherheitslogik nur im Frontend.
+
+Berechtigungen immer zusätzlich im Backend.
+
+---
+
+# Build
+
+Development:
+
+```bash
+npm install
+npm run dev
+```
+
+Tests:
+
+```bash
+npm test
+```
+
+Build:
+
+```bash
+npm run build
+```
+
+Preview:
+
+```bash
+npm run preview
+```
+
+---
+
+# Deployment Kontext
+
+Ziel:
+
+```text
+Docker Container auf UGREEN NAS
+```
+
+Kommunikation:
+
+```text
+Frontend → Backend REST API
+```
+
+Session basiert über Browser Cookie.
+
+---
+
+# Geplante technische Erweiterungen
+
+- Session Timeout UX
+- Auto Logout Hinweis
+- Passwortwechsel UI
+- Passwort Reset UI
+- zusätzliche Integrationstests
+- Rollen-/Security UX Optimierung

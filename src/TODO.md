@@ -1,38 +1,166 @@
-# TODO
+# TODO – EMC Mitgliederverwaltung Frontend
 
-## UX
+## Priorität Hoch
 
-- [x] Erfolgsmeldung
-- [x] Unsaved Changes
+### Security Hardening (abhängig vom Backend)
 
-## Features
+- [ ] Session Timeout / Auto Logout UX
+  - automatische Abmeldung nach Inaktivität
+  - Nutzerhinweis vor Logout
+  - sauberer Redirect auf Login
 
-- [x] Datenschutz
-- [x] Chorkleidung
-- [ ] Undo / History
+- [ ] Passwortwechsel beim Erstlogin UI
+  - Passwort ändern Dialog / Seite
+  - erzwungener Flow
+  - keine Umgehung möglich
 
-## Fachliche Validierung
+- [ ] Passwort Reset UI
+  - Admin-initiiertes Reset-Verhalten unterstützen
+  - Initialpasswort Workflow abbilden
 
-- [x] PLZ-Validierung
-- [ ] Telefonnummern-Konzept: Format, Migration und Validierung festlegen
-- [ ] Telefonnummern-Bestandsdaten analysieren
-- [ ] Telefonnummern optional auf E.164 normalisieren (+49...)
+- [ ] Behandlung gesperrter Benutzer
+  - neutrale Fehlermeldung
+  - optional UX-Hinweis falls fachlich gewünscht
 
-## Technisches Refactoring
+---
 
-- [x] Validatoren aus Formularen extrahieren
-- [x] Payload-Mapping aus Formularen extrahieren
-- [x] Default-/Reset-Mapping aus Formularen extrahieren
-- [ ] Performance-Optimierung (nur falls echter Bedarf)
+## Priorität Mittel
 
-## Technische Verbesserungen (optional)
+### Testing
 
-- [x] gemeinsame DateField-Komponente
-- [ ] TitleField aus MemberStammdatenForm extrahieren
-- [x] Validator Unit Tests
-- [ ] Payload/Validator-Konstanten zentralisieren (nur wenn sinnvoll)
+- [ ] React Component Tests
 
-## Zukunft / größere Features
+  Fokus:
+  - LoginPage
+  - ProtectedRoute
+  - AuthProvider
+  - AppLayout
+  - AdminUsersPage
 
-- [ ] Login gegen echtes Backend
-- [ ] Undo / Änderungsverlauf / History
+  Ziel:
+  - Login-Verhalten absichern
+  - Session Restore absichern
+  - Rollenabhängige Navigation prüfen
+  - Viewer ReadOnly Verhalten absichern
+  - Admin Benutzerverwaltung UI absichern
+
+---
+
+- [ ] Integration Tests für kritische Frontend-Flows
+
+  Kandidaten:
+  - Login
+  - Logout
+  - Session Restore
+  - Rollensteuerung
+  - Viewer ReadOnly
+  - Admin Benutzerverwaltung
+  - Member Edit Flow
+
+  Hinweis:
+
+  Erst nach Phase 4 Security Hardening sinnvoll, da sich Login-/Session-Verhalten noch ändern wird.
+
+---
+
+### UX Verbesserungen
+
+- [ ] bessere Session-Ladeanzeige beim App Start
+
+- [ ] Benutzerfreundlichere Fehlertexte für Netzwerkfehler
+
+- [ ] Bestätigungsdialoge prüfen
+      z. B.:
+  - Benutzer deaktivieren
+  - Passwort zurücksetzen
+  - Mitglied löschen
+
+- [ ] konsistente Success-/Error Notifications
+      aktuell Mischung aus:
+  - Inline Meldungen
+  - Formularstatus
+  - Fehlerboxen
+
+---
+
+## Priorität Mittel / Architektur
+
+### Codequalität
+
+- [ ] weitere gemeinsame UI-Komponenten prüfen
+
+- [ ] AdminUsersPage ggf. weiter in kleinere Komponenten aufteilen
+
+- [ ] API Fehlerhandling weiter vereinheitlichen
+
+- [ ] React Query Query Keys zentralisieren
+
+---
+
+## Später
+
+### Erweiterungen
+
+- [ ] Passwortstärke-Anzeige
+
+- [ ] Benutzerprofil / eigenes Passwort ändern
+
+- [ ] Session-Status-Indikator
+
+- [ ] Dark Mode (optional)
+
+---
+
+## Fachliche Erweiterungen
+
+- [ ] Ehrungen UI
+
+- [ ] Funktionen / Chorrollen
+
+- [ ] Berichte / Auswertungen
+
+- [ ] Exportfunktionen
+
+- [ ] Mailfunktionen
+
+---
+
+## Erledigt
+
+- [x] Session-basierte Authentifizierung
+
+- [x] Login / Logout
+
+- [x] Session Restore
+
+- [x] Protected Routes
+
+- [x] Rollenmodell (ADMIN / EDITOR / VIEWER)
+
+- [x] rollenbasierte Navigation
+
+- [x] Viewer ReadOnly Verhalten
+
+- [x] Mitgliederliste
+
+- [x] Suche / Filter / Pagination
+
+- [x] Mitglied Detailansicht
+
+- [x] Neuanlage
+
+- [x] AutoSave Formulare
+
+- [x] Datenschutz Formular
+
+- [x] Chorkleidung Formular
+
+- [x] Admin Benutzerverwaltung
+
+- [x] Formular Refactoring
+
+- [x] gemeinsame Form-Komponenten
+
+- [x] Validator Refactoring
+
+- [x] Frontend Unit Tests (64)
