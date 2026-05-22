@@ -14,10 +14,11 @@ Funktionale Schwerpunkte:
 - Session-basierte Benutzeranmeldung
 - rollenbasierte UI
 - Admin Benutzerverwaltung
+- Anzeige von Frontend- und Backend-Version
 
 Aktueller Stand:
 
-**Phase 3c abgeschlossen (Auth + Rollen + Admin UI)**
+**Phase 3c abgeschlossen (Auth + Rollen + Admin UI + Versionsanzeige)**
 
 ---
 
@@ -417,6 +418,76 @@ GET  /api/auth/me
 GET  /api/members
 GET  /api/lookups/*
 GET  /api/admin/users
+GET  /api/system/info
+```
+
+---
+
+## Versionsanzeige
+
+Das Frontend zeigt im `EnvironmentBadge` die aktuell laufenden Frontend- und Backend-Versionen an.
+
+Beispiel:
+
+```text
+FE v1.0.0-SNAPSHOT | BE v1.1.1-SNAPSHOT
+```
+
+Zweck:
+
+- Deployment Smoke Tests
+- schnelle Betriebsidentifikation
+- Support / Fehlerdiagnose
+- Erkennung von Frontend-/Backend-Versionsabweichungen
+
+### Frontend-Version
+
+Die Frontend-Version wird zentral in:
+
+```text
+package.json
+```
+
+definiert:
+
+```json
+"version": "1.0.0-SNAPSHOT"
+```
+
+Über Vite wird diese Build-Zeit-Information bereitgestellt:
+
+```javascript
+import.meta.env.VITE_APP_VERSION;
+```
+
+### Backend-Version
+
+Die Backend-Version wird über den authentifizierten technischen Endpoint geladen:
+
+```http
+GET /api/system/info
+```
+
+Beispiel Response:
+
+```json
+{
+  "backendVersion": "1.1.1-SNAPSHOT"
+}
+```
+
+Da das Backend session-basiert arbeitet, erfolgt der Request mit Browser-Session:
+
+```javascript
+credentials: "include";
+```
+
+### Implementierung
+
+Anzeige erfolgt über:
+
+```text
+src/components/common/EnvironmentBadge.jsx
 ```
 
 ---

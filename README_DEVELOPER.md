@@ -21,6 +21,7 @@ Dieses Dokument ist kein Benutzerhandbuch.
 - React 19
 - Vite
 - JavaScript
+- Vite Build Metadata (`package.json version`)
 
 ## Routing
 
@@ -271,6 +272,18 @@ Aktuelle Module:
 - `lookupApi.js`
 - `adminUserApi.js`
 
+Hinweis:
+
+Systeminformationen werden aktuell direkt in `EnvironmentBadge` geladen.
+
+Eine spätere Auslagerung nach:
+
+```text
+systemApi.js
+```
+
+ist möglich.
+
 ---
 
 ## Regeln
@@ -366,6 +379,13 @@ Beispiele:
 - ErrorBox
 - EnvironmentBadge
 
+EnvironmentBadge zeigt:
+
+- Umgebung
+- Proxy-Ziel
+- Frontend-Version
+- Backend-Version
+
 ---
 
 ## Layout Components
@@ -391,6 +411,79 @@ src/components/members
 ```
 
 Mitglieder-bezogene Komponenten.
+
+---
+
+# Versionsinformationen
+
+Das Frontend unterstützt technische Versionsanzeige für Betrieb und Deployment-Kontrolle.
+
+## Frontend-Version
+
+Quelle:
+
+```text
+package.json
+```
+
+Beispiel:
+
+```json
+"version": "1.0.0-SNAPSHOT"
+```
+
+Bereitstellung via Vite:
+
+```javascript
+import.meta.env.VITE_APP_VERSION;
+```
+
+## Backend-Version
+
+Quelle:
+
+```http
+GET /api/system/info
+```
+
+Beispiel Response:
+
+```json
+{
+  "backendVersion": "1.1.1-SNAPSHOT"
+}
+```
+
+Der Endpoint ist authentifiziert und nutzt die bestehende Session.
+
+Request:
+
+```javascript
+fetch("/api/system/info", {
+  credentials: "include",
+});
+```
+
+## Anzeige
+
+Komponente:
+
+```text
+src/components/common/EnvironmentBadge.jsx
+```
+
+Beispiel:
+
+```text
+localhost | Proxy → localhost:8080 | FE v1.0.0-SNAPSHOT | BE v1.1.1-SNAPSHOT
+```
+
+## Zweck
+
+- Deployment-Verifikation
+- Versionskontrolle DEV/PROD
+- Support / Diagnose
+- Erkennung von Versions-Mismatch
 
 ---
 
@@ -594,7 +687,7 @@ Nur ADMIN.
 Funktionen:
 
 - Benutzerliste
-- Anlegen
+- Benutzer anlegen
 - Rolle ändern
 - aktiv/inaktiv
 - Passwort setzen
@@ -746,6 +839,8 @@ Session/Auth State
 
 Keine Fetch-Aufrufe direkt in Components.
 
+(Ausnahme aktuell: technischer System-Info Abruf im `EnvironmentBadge`.)
+
 ---
 
 ## Validierung
@@ -785,6 +880,14 @@ Build:
 npm run build
 ```
 
+Dabei wird die Frontend-Version aus:
+
+```text
+package.json
+```
+
+in die Anwendung eingebettet.
+
 Preview:
 
 ```bash
@@ -805,6 +908,12 @@ Kommunikation:
 
 ```text
 Frontend → Backend REST API
+```
+
+Technischer System-Endpoint:
+
+```http
+GET /api/system/info
 ```
 
 Session basiert über Browser Cookie.
