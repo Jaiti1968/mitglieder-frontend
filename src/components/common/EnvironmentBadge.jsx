@@ -1,12 +1,13 @@
 export default function EnvironmentBadge() {
   const envName = "localhost";
   const proxyTarget = "localhost:8080";
+  const appVersion = import.meta.env.VITE_APP_VERSION;
 
   return (
     <div style={containerStyle}>
       <span style={badgeStyle}>{envName}</span>
-
       <span style={urlStyle}>Proxy → {proxyTarget}</span>
+      <span style={versionStyle}>v{appVersion}</span>
     </div>
   );
 }
@@ -29,5 +30,11 @@ const badgeStyle = {
 const urlStyle = {
   fontSize: "0.8rem",
   color: "#555",
+  fontFamily: "monospace",
+};
+
+const versionStyle = {
+  fontSize: "0.8rem",
+  color: "#6b7280",
   fontFamily: "monospace",
 };
