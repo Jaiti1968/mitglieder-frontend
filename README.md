@@ -430,7 +430,7 @@ Das Frontend zeigt im `EnvironmentBadge` die aktuell laufenden Frontend- und Bac
 Beispiel:
 
 ```text
-FE v1.0.0-SNAPSHOT | BE v1.1.1-SNAPSHOT
+FE v1.1.1-SNAPSHOT | BE v1.1.1-SNAPSHOT
 ```
 
 Zweck:
@@ -451,7 +451,7 @@ package.json
 definiert:
 
 ```json
-"version": "1.0.0-SNAPSHOT"
+"version": "1.1.1-SNAPSHOT"
 ```
 
 Über Vite wird diese Build-Zeit-Information bereitgestellt:
@@ -556,6 +556,108 @@ UGREEN NAS DH2300
 ```
 
 Frontend läuft als Docker Container hinter Reverse Proxy / NAS Setup.
+
+### Deployment Standard
+
+Frontend DEV und PROD werden image-basiert betrieben.
+
+Build-Artefakt:
+
+```text
+dist/
+```
+
+Container Runtime:
+
+```text
+nginx:alpine
+```
+
+Deploymentmodell:
+
+```text
+npm run build
+→ dist auf NAS übertragen
+→ Docker Image Build auf NAS
+→ Docker Compose Deployment
+```
+
+Die Compose-Dateien sind Bestandteil des Repositories:
+
+```text
+emc-infra
+```
+
+und bilden die operative Source of Truth.
+
+---
+
+## Docker
+
+Projektdateien:
+
+```text
+Dockerfile
+.dockerignore
+
+docker/
+├── nginx-local.conf
+├── nginx-dev.conf
+└── nginx-prod.conf
+```
+
+### Lokaler Test
+
+Build:
+
+```bash
+docker build \
+  --build-arg NGINX_CONF=nginx-local.conf \
+  -t emc-mitglieder-frontend:local .
+```
+
+Start:
+
+```bash
+docker run -p 8088:80 emc-mitglieder-frontend:local
+```
+
+### NAS Deployment
+
+DEV:
+
+```bash
+docker build \
+  --build-arg NGINX_CONF=nginx-dev.conf \
+  -t emc-mitglieder-frontend:1.1.1-SNAPSHOT-dev .
+```
+
+PROD:
+
+```bash
+docker build \
+  --build-arg NGINX_CONF=nginx-prod.conf \
+  -t emc-mitglieder-frontend:1.1.1-SNAPSHOT .
+```
+
+---
+
+## Betriebsstandard
+
+Im Rahmen der EMC NAS Betriebsstandardisierung wurde Frontend Deployment Standard v1 eingeführt.
+
+Merkmale:
+
+- image-basiertes Deployment
+- versioniertes Dockerfile
+- versionierte nginx-Konfiguration
+- Docker Compose Deployment
+- keine Runtime Bind-Mounts für Frontend-Artefakte
+- Git-basierte Änderungsverfolgung
+
+Ziel:
+
+identischer Betriebsstandard für Frontend und Backend.
 
 ---
 

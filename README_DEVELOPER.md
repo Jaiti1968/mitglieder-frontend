@@ -429,7 +429,7 @@ package.json
 Beispiel:
 
 ```json
-"version": "1.0.0-SNAPSHOT"
+"version": "1.1.1-SNAPSHOT"
 ```
 
 Bereitstellung via Vite:
@@ -475,7 +475,7 @@ src/components/common/EnvironmentBadge.jsx
 Beispiel:
 
 ```text
-localhost | Proxy → localhost:8080 | FE v1.0.0-SNAPSHOT | BE v1.1.1-SNAPSHOT
+<Umgebung> | FE v1.1.1-SNAPSHOT | BE v1.1.1-SNAPSHOT
 ```
 
 ## Zweck
@@ -859,6 +859,54 @@ Berechtigungen immer zusätzlich im Backend.
 
 ---
 
+# Docker Deployment
+
+## Docker Artefakte
+
+```text
+Dockerfile
+.dockerignore
+
+docker/
+├── nginx-local.conf
+├── nginx-dev.conf
+└── nginx-prod.conf
+```
+
+## Deployment Architektur
+
+Frontend wird image-basiert betrieben.
+
+Ablauf:
+
+```text
+npm run build
+→ dist erzeugen
+→ Docker Image Build
+→ Docker Compose Deployment
+```
+
+Runtime:
+
+```text
+nginx:alpine
+```
+
+## Image Versionierung
+
+Image Tags enthalten die Anwendungsversion.
+
+Beispiel:
+
+```text
+emc-mitglieder-frontend:1.1.1-SNAPSHOT-dev
+emc-mitglieder-frontend:1.1.1
+```
+
+Dadurch bleiben Deployments und Rollbacks nachvollziehbar.
+
+---
+
 # Build
 
 Development:
@@ -896,6 +944,24 @@ npm run preview
 
 ---
 
+## Lokaler Docker Test
+
+Build:
+
+```bash
+docker build \
+  --build-arg NGINX_CONF=nginx-local.conf \
+  -t emc-mitglieder-frontend:local .
+```
+
+Start:
+
+```bash
+docker run -p 8088:80 emc-mitglieder-frontend:local
+```
+
+---
+
 # Deployment Kontext
 
 Ziel:
@@ -917,6 +983,22 @@ GET /api/system/info
 ```
 
 Session basiert über Browser Cookie.
+
+Betriebsstandard:
+
+```text
+Git Repository
+→ Build-Artefakte
+→ Docker Image
+→ Docker Compose
+→ NAS Deployment
+```
+
+Die operative Compose Source of Truth liegt im Repository:
+
+```text
+emc-infra
+```
 
 ---
 
