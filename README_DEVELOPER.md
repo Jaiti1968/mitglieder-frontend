@@ -381,10 +381,20 @@ Beispiele:
 
 EnvironmentBadge zeigt:
 
-- Umgebung
+- Umgebung (derzeit aus Frontend-Konfiguration abgeleitet)
 - Proxy-Ziel
 - Frontend-Version
 - Backend-Version
+
+Hinweis:
+
+Die aktuelle Umgebungsanzeige basiert auf Frontend-Konfigurationsinformationen und ist nicht in allen Deployment-Szenarien eindeutig.
+
+Eine zukünftige Version soll die Umgebungskennung über den Backend-Endpunkt
+
+GET /api/system/info
+
+bereitstellen und damit DEV/PROD eindeutig anzeigen.
 
 ---
 
@@ -416,7 +426,7 @@ Mitglieder-bezogene Komponenten.
 
 # Versionsinformationen
 
-Das Frontend unterstützt technische Versionsanzeige für Betrieb und Deployment-Kontrolle.
+Das Frontend unterstützt technische Versionsanzeige für Betrieb, Deployment-Kontrolle und Fehlerdiagnose.
 
 ## Frontend-Version
 
@@ -426,10 +436,16 @@ Quelle:
 package.json
 ```
 
-Beispiel:
+Beispiel Entwicklungsstand:
 
 ```json
-"version": "1.1.1-SNAPSHOT"
+"version": "1.1.2-SNAPSHOT"
+```
+
+Beispiel Release:
+
+```json
+"version": "1.1.1"
 ```
 
 Bereitstellung via Vite:
@@ -437,6 +453,21 @@ Bereitstellung via Vite:
 ```javascript
 import.meta.env.VITE_APP_VERSION;
 ```
+
+Konfiguration:
+
+```javascript
+// vite.config.js
+"import.meta.env.VITE_APP_VERSION": JSON.stringify(packageJson.version)
+```
+
+Wichtig:
+
+Die Frontend-Version wird zum Build-Zeitpunkt aus `package.json` übernommen.
+
+Vor einem Release-Build muss daher geprüft werden, dass eine Release-Version ohne `-SNAPSHOT` gesetzt ist.
+
+Nach Abschluss eines Releases wird die Entwicklungsversion auf die nächste Snapshot-Version angehoben.
 
 ## Backend-Version
 
@@ -450,7 +481,7 @@ Beispiel Response:
 
 ```json
 {
-  "backendVersion": "1.1.1-SNAPSHOT"
+  "backendVersion": "1.1.2"
 }
 ```
 
@@ -472,10 +503,16 @@ Komponente:
 src/components/common/EnvironmentBadge.jsx
 ```
 
-Beispiel:
+Beispiel DEV:
 
 ```text
-<Umgebung> | FE v1.1.1-SNAPSHOT | BE v1.1.1-SNAPSHOT
+<Umgebung> | FE v1.1.2-SNAPSHOT | BE v1.1.2-SNAPSHOT
+```
+
+Beispiel PROD:
+
+```text
+<Umgebung> | FE v1.1.1 | BE v1.1.1
 ```
 
 ## Zweck
@@ -880,10 +917,15 @@ Frontend wird image-basiert betrieben.
 Ablauf:
 
 ```text
-npm run build
-→ dist erzeugen
-→ Docker Image Build
-→ Docker Compose Deployment
+1. package.json Version prüfen
+2. npm run build
+3. Docker Image Build
+4. docker save
+5. Übertragung auf NAS
+6. docker load
+7. Portainer Redeploy
+8. Smoke Test
+9. Browser-Cache prüfen / Seite neu laden
 ```
 
 Runtime:
@@ -899,9 +941,25 @@ Image Tags enthalten die Anwendungsversion.
 Beispiel:
 
 ```text
-emc-mitglieder-frontend:1.1.1-SNAPSHOT-dev
-emc-mitglieder-frontend:1.1.1
+DEV:
+emc-mitglieder-frontend:X.Y.Z-SNAPSHOT
+
+PROD:
+emc-mitglieder-frontend:X.Y.Z
 ```
+
+Build-Plattform:
+
+linux/arm64
+
+NAS-Deployments müssen ARM64-kompatible Images erzeugen.
+
+Beispiel:
+
+docker build \
+ --platform linux/arm64 \
+ --build-arg NGINX_CONF=nginx-prod.conf \
+ -t emc-mitglieder-frontend:1.1.1 .
 
 Dadurch bleiben Deployments und Rollbacks nachvollziehbar.
 
@@ -928,6 +986,14 @@ Build:
 npm run build
 ```
 
+Voraussetzungen:
+
+Hinweis:
+
+Für den anschließenden Docker Image Build muss Docker Desktop gestartet und die Docker Engine erreichbar sein.
+
+Vor Release-Builds ist die Version in package.json zu prüfen.
+
 Dabei wird die Frontend-Version aus:
 
 ```text
@@ -950,8 +1016,9 @@ Build:
 
 ```bash
 docker build \
-  --build-arg NGINX_CONF=nginx-local.conf \
-  -t emc-mitglieder-frontend:local .
+  --platform linux/arm64 \
+  --build-arg NGINX_CONF=nginx-prod.conf \
+  -t emc-mitglieder-frontend:1.1.1 .
 ```
 
 Start:

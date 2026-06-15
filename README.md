@@ -427,10 +427,16 @@ GET  /api/system/info
 
 Das Frontend zeigt im `EnvironmentBadge` die aktuell laufenden Frontend- und Backend-Versionen an.
 
-Beispiel:
+Beispiel DEV:
 
 ```text
-FE v1.1.1-SNAPSHOT | BE v1.1.1-SNAPSHOT
+FE v1.1.2-SNAPSHOT | BE v1.1.2-SNAPSHOT
+```
+
+Beispiel PROD:
+
+```text
+FE v1.1.1 | BE v1.1.2
 ```
 
 Zweck:
@@ -451,7 +457,7 @@ package.json
 definiert:
 
 ```json
-"version": "1.1.1-SNAPSHOT"
+"version": "1.1.2-SNAPSHOT"
 ```
 
 Über Vite wird diese Build-Zeit-Information bereitgestellt:
@@ -459,6 +465,31 @@ definiert:
 ```javascript
 import.meta.env.VITE_APP_VERSION;
 ```
+
+Konfiguration:
+
+```javascript
+// vite.config.js
+"import.meta.env.VITE_APP_VERSION": JSON.stringify(packageJson.version)
+```
+
+Hinweis:
+
+Die Anzeige der Frontend-Version basiert auf der Version in `package.json` zum Zeitpunkt des Builds.
+
+Für Release-Builds muss daher eine Release-Version gesetzt werden:
+
+```json
+"version": "1.1.1"
+```
+
+Für Entwicklungsstände wird die Version als Snapshot geführt:
+
+```json
+"version": "1.1.2-SNAPSHOT"
+```
+
+Nach einem Release-Build wird die Entwicklungsversion wieder auf die nächste Snapshot-Version angehoben.
 
 ### Backend-Version
 
@@ -472,7 +503,7 @@ Beispiel Response:
 
 ```json
 {
-  "backendVersion": "1.1.1-SNAPSHOT"
+  "backendVersion": "1.1.2"
 }
 ```
 
@@ -541,13 +572,19 @@ npm run preview
 
 Deployment erfolgt containerisiert.
 
-Typischer Flow:
+Frontend DEV und PROD werden als versionierte Docker Images betrieben.
 
-```bash
-npm run build
-docker build ...
-docker compose up -d
-```
+Deployment-Artefakte:
+
+DEV:
+emc-mitglieder-frontend:X.Y.Z-SNAPSHOT
+
+PROD:
+emc-mitglieder-frontend:X.Y.Z
+
+Vor jedem Release-Build ist die Version in package.json zu prüfen, da die Frontend-Versionsanzeige aus dieser Datei erzeugt wird.
+
+Docker Desktop muss für den Build-Prozess gestartet sein.
 
 Zielumgebung:
 
@@ -592,6 +629,45 @@ und bilden die operative Source of Truth.
 
 ---
 
+### Deployment Standard
+
+Frontend DEV und PROD werden image-basiert betrieben.
+
+Deployment-Artefakte:
+
+DEV:
+emc-mitglieder-frontend:X.Y.Z-SNAPSHOT
+
+PROD:
+emc-mitglieder-frontend:X.Y.Z
+
+Build-Plattform:
+
+linux/arm64
+
+Build-Konfiguration:
+
+NGINX_CONF
+
+Mögliche Werte:
+
+- nginx-local.conf
+- nginx-dev.conf
+- nginx-prod.conf
+
+Deployment-Prozess:
+
+1. package.json Version prüfen
+2. npm run build
+3. Docker Image Build
+4. docker save
+5. Übertragung auf NAS
+6. docker load
+7. Portainer Redeploy
+8. Smoke Test
+
+Die Compose-Dateien sind Bestandteil des Repositories emc-infra und bilden die operative Source of Truth.
+
 ## Docker
 
 Projektdateien:
@@ -628,16 +704,18 @@ DEV:
 
 ```bash
 docker build \
+  --platform linux/arm64 \
   --build-arg NGINX_CONF=nginx-dev.conf \
-  -t emc-mitglieder-frontend:1.1.1-SNAPSHOT-dev .
+  -t emc-mitglieder-frontend:1.1.2-SNAPSHOT .
 ```
 
 PROD:
 
 ```bash
 docker build \
+  --platform linux/arm64 \
   --build-arg NGINX_CONF=nginx-prod.conf \
-  -t emc-mitglieder-frontend:1.1.1-SNAPSHOT .
+  -t emc-mitglieder-frontend:1.1.1 .
 ```
 
 ---
@@ -654,6 +732,9 @@ Merkmale:
 - Docker Compose Deployment
 - keine Runtime Bind-Mounts für Frontend-Artefakte
 - Git-basierte Änderungsverfolgung
+- Snapshot-/Release-Strategie analog Backend
+- ARM64-kompatible Images für NAS Deployment
+- Image-Transfer über docker save / docker load
 
 Ziel:
 
