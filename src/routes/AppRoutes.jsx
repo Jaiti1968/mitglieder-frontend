@@ -6,6 +6,7 @@ import CreateMemberPage from "../pages/CreateMemberPage";
 import ProtectedRoute from "../auth/ProtectedRoute";
 import AppLayout from "../components/layouts/AppLayout";
 import AdminUsersPage from "../pages/AdminUsersPage";
+import ReportingMembersDirectoryPage from "../pages/ReportingMembersDirectoryPage";
 
 export default function AppRoutes() {
   return (
@@ -29,6 +30,11 @@ export default function AppRoutes() {
         />
 
         <Route path="/admin/users" element={<AdminUsersPage />} />
+
+        <Route
+          path="/reporting/members-directory"
+          element={<ReportingMembersDirectoryPage />}
+        />
       </Route>
     </Routes>
   );
