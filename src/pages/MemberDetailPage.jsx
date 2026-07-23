@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getChorkleidung,
   getDatenschutz,
@@ -11,8 +11,10 @@ import {
   updateMitgliedschaft,
   updateStammdaten,
 } from "../api/memberApi";
-import { getMemberStatuses, getVoices } from "../api/lookupApi";
+import { useQuery } from "@tanstack/react-query";
+import useMemberLookups from "../hooks/useMemberLookups";
 import useAuth from "../auth/useAuth";
+import BackLink from "../components/common/BackLink";
 
 import MemberStammdatenForm from "../components/members/details/MemberStammdatenForm";
 import MemberContactForm from "../components/members/details/MemberContactForm";
@@ -76,15 +78,7 @@ export default function MemberDetailPage() {
     enabled: activeTab === "chorkleidung",
   });
 
-  const { data: statuses = [] } = useQuery({
-    queryKey: ["member-statuses"],
-    queryFn: getMemberStatuses,
-  });
-
-  const { data: voices = [] } = useQuery({
-    queryKey: ["voices"],
-    queryFn: getVoices,
-  });
+  const { statuses, voices } = useMemberLookups();
 
   function updateMemberCache(partialData) {
     queryClient.setQueryData(["member", mitgliedsnummer], (current) => {
@@ -212,13 +206,12 @@ export default function MemberDetailPage() {
         onLeave={handleLeave}
       />
 
-      <Link
+      <BackLink
         to={backTarget}
         onClick={(event) => handleNavigate(event, backTarget)}
-        style={backLinkStyle}
       >
-        ← Zur Mitgliederliste
-      </Link>
+        Zur Mitgliederliste
+      </BackLink>
 
       <MemberHeader member={member} />
 
@@ -479,12 +472,4 @@ const readOnlyNoticeStyle = {
   borderRadius: "8px",
   backgroundColor: "#f9fafb",
   color: "#374151",
-};
-
-const backLinkStyle = {
-  display: "inline-block",
-  marginBottom: "1rem",
-  color: "#2563eb",
-  textDecoration: "none",
-  fontWeight: 600,
 };

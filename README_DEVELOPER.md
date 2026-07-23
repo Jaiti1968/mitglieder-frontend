@@ -52,7 +52,7 @@ Grundstruktur:
 ```text
 Pages
 → Feature Components
-→ Shared Components
+→ Shared Components (Beispiele: BackLink, FilterChip)
 → Hooks
 → API Layer
 → Spring Boot Backend
@@ -79,9 +79,11 @@ src
 │   ├── common
 │   ├── forms
 │   ├── layouts
-│   └── members
+│   ├── members
+│   └── reporting
 ├── hooks
-│   └── forms
+│   ├── forms
+│   └── useMemberLookups.js
 ├── pages
 ├── routes
 ├── utils
@@ -271,6 +273,7 @@ Aktuelle Module:
 - `memberApi.js`
 - `lookupApi.js`
 - `adminUserApi.js`
+- `reportingApi.js`
 
 Hinweis:
 
@@ -315,6 +318,7 @@ Verwendung für:
 - Member Daten
 - Lookup Daten
 - Admin User Daten
+- Reporting Daten
 
 Verantwortung:
 
@@ -348,6 +352,8 @@ Aktuell:
 - `MemberDetailPage`
 - `CreateMemberPage`
 - `AdminUsersPage`
+- `ReportingPage`
+- `ReportingMembersDirectoryPage`
 
 ---
 
@@ -418,9 +424,11 @@ Ordner:
 
 ```text
 src/components/members
+src/components/reporting
 ```
 
 Mitglieder-bezogene Komponenten.
+Browserbasierte Reporting-Komponenten einschließlich Mitgliederverzeichnis und Geburtstagsliste.
 
 ---
 
@@ -840,6 +848,12 @@ docs/readme-update-phase3
 ---
 
 # Entwicklungsregeln
+
+Gemeinsam genutzte UI-Elemente sollen bevorzugt als Komponenten unter `src/components/common` umgesetzt werden.
+
+Wiederkehrende Datenbeschaffung soll über gemeinsame Hooks unter `src/hooks` erfolgen.
+
+Dadurch werden doppelte Implementierungen vermieden und eine konsistente Architektur gefördert.
 
 ## Komponenten
 

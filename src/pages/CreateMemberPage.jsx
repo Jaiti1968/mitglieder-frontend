@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createMember } from "../api/memberApi";
 import { getMemberStatuses, getVoices } from "../api/lookupApi";
@@ -9,6 +9,7 @@ import MemberMembershipForm from "../components/members/details/MemberMembership
 import MemberTabs from "../components/members/details/MemberTabs";
 import MemberSection from "../components/members/details/MemberSection";
 import ErrorBox from "../components/common/ErrorBox";
+import BackLink from "../components/common/BackLink";
 
 export default function CreateMemberPage() {
   const navigate = useNavigate();
@@ -88,12 +89,7 @@ export default function CreateMemberPage() {
 
   return (
     <main>
-      <Link
-        to="/members"
-        style={{ display: "inline-block", marginBottom: "1rem" }}
-      >
-        ← Zurück zur Liste
-      </Link>
+      <BackLink to="/members">Zur Mitgliederliste</BackLink>
 
       <header style={headerStyle}>
         <h1 style={{ marginBottom: "0.25rem", fontSize: "1.8rem" }}>

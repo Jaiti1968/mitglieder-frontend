@@ -25,7 +25,7 @@ export default function AppLayout() {
         <div style={rightAreaStyle}>
           {user?.role === "ADMIN" && (
             <>
-              <Link to="/reporting/members-directory" style={navLinkStyle}>
+              <Link to="/reporting" style={navLinkStyle}>
                 Reporting
               </Link>
 

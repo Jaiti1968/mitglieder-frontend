@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { getMemberStatuses, getVoices } from "../api/lookupApi";
+import useMemberLookups from "../hooks/useMemberLookups";
 import MembersDirectoryFilterPanel from "../components/reporting/membersDirectory/MembersDirectoryFilterPanel";
 import MembersDirectoryResult from "../components/reporting/membersDirectory/MembersDirectoryResult";
 import {
@@ -9,8 +8,9 @@ import {
   downloadMembersDirectoryPdf,
   downloadMembersDirectoryExcel,
 } from "../api/reportingApi";
+import BackLink from "../components/common/BackLink";
 
-export default function ReportingMembersDirectoryPage() {
+export default function ReportingMembersDirectoryPage({ embedded = false }) {
   const [search, setSearch] = useState("");
   const [mitgliedsstatusIds, setMitgliedsstatusIds] = useState([]);
   const [stimmeIds, setStimmeIds] = useState([]);
@@ -18,15 +18,7 @@ export default function ReportingMembersDirectoryPage() {
 
   const searchIsValid = search.length === 0 || search.length >= 3;
 
-  const { data: statuses = [] } = useQuery({
-    queryKey: ["member-statuses"],
-    queryFn: getMemberStatuses,
-  });
-
-  const { data: voices = [] } = useQuery({
-    queryKey: ["voices"],
-    queryFn: getVoices,
-  });
+  const { statuses, voices } = useMemberLookups();
 
   const {
     data: report,
@@ -132,12 +124,15 @@ export default function ReportingMembersDirectoryPage() {
   }
 
   return (
-    <main>
-      <Link to="/members" style={backLinkStyle}>
-        ← Zur Mitgliederliste
-      </Link>
+    <section>
+      {!embedded && (
+        <>
+          <BackLink to="/members">Zur Mitgliederliste</BackLink>
 
-      <h1>Reporting</h1>
+          <h1>Reporting</h1>
+        </>
+      )}
+
       <h2>Mitgliederverzeichnis</h2>
 
       <MembersDirectoryFilterPanel
@@ -201,14 +196,6 @@ export default function ReportingMembersDirectoryPage() {
       {!isError && report && totalMembers > 0 && (
         <MembersDirectoryResult report={report} />
       )}
-    </main>
+    </section>
   );
 }
-
-const backLinkStyle = {
-  display: "inline-block",
-  marginBottom: "1rem",
-  color: "#2563eb",
-  textDecoration: "none",
-  fontWeight: 600,
-};

@@ -14,11 +14,25 @@ Funktionale Schwerpunkte:
 - Session-basierte Benutzeranmeldung
 - rollenbasierte UI
 - Admin Benutzerverwaltung
-- Anzeige von Frontend- und Backend-Version
+- Anzeige von Frontend- und Backend-Version- Reporting
+  - Mitgliederverzeichnis
+  - Geburtstagsliste
+- Admin Benutzerverwaltung
 
 Aktueller Stand:
 
-**Phase 3c abgeschlossen (Auth + Rollen + Admin UI + Versionsanzeige)**
+**Reporting Phase 3 abgeschlossen**
+
+Umgesetzt:
+
+- Authentifizierung und Rollenmodell
+- Mitgliederverwaltung
+- Benutzerverwaltung
+- Reporting
+  - Mitgliederverzeichnis
+  - Geburtstagsliste
+- PDF-Export
+- Versionserkennung
 
 ---
 
@@ -60,9 +74,11 @@ src
 │   ├── common
 │   ├── forms
 │   ├── layouts
-│   └── members
+│   ├── members
+│   └── reporting
 ├── hooks
-│   └── forms
+│   ├── forms
+│   └── useMemberLookups.js
 ├── pages
 ├── routes
 ├── utils
@@ -171,6 +187,9 @@ Aktuelle Routen:
 /members/new
 /members/:mitgliedsnummer
 /admin/users
+/reporting
+/reporting/members-directory
+/reporting/birthday-list
 ```
 
 ---
@@ -253,6 +272,44 @@ Rollen-/Aktivitätsänderungen wirken nach erneuter Anmeldung des betroffenen Be
 
 ---
 
+## ReportingPage
+
+Einstiegspunkt für das Reporting.
+
+Berichte:
+
+- Mitgliederverzeichnis
+- Geburtstagsliste
+
+---
+
+## ReportingMembersDirectoryPage
+
+Filterbare Browseransicht des Mitgliederverzeichnisses.
+
+Funktionen:
+
+- Statusfilter
+- Stimmenfilter
+- PDF-Export
+- Excel-Export
+
+---
+
+## BirthdayReportView
+
+Browseransicht der Geburtstagsliste.
+
+Funktionen:
+
+- Gruppierung nach Monaten
+- Statusfilter
+- Stimmenfilter
+- Kennzeichnung runder Geburtstage
+- PDF-Export
+
+---
+
 ## Formulare / AutoSave
 
 Detailformulare speichern automatisch.
@@ -302,6 +359,7 @@ Aktuell:
 - `memberApi.js`
 - `lookupApi.js`
 - `adminUserApi.js`
+- `reportingApi.js`
 
 Verantwortung:
 
@@ -384,7 +442,7 @@ Vitest
 Aktueller Stand:
 
 ```text
-64 erfolgreiche Unit Tests
+98 erfolgreiche Unit Tests
 ```
 
 Abgedeckt:
@@ -419,6 +477,13 @@ GET  /api/members
 GET  /api/lookups/*
 GET  /api/admin/users
 GET  /api/system/info
+
+POST /api/reporting/members-directory/query
+POST /api/reporting/members-directory/export/pdf
+POST /api/reporting/members-directory/export/excel
+
+POST /api/reporting/birthday-list/query
+POST /api/reporting/birthday-list/export/pdf
 ```
 
 ---
@@ -762,6 +827,10 @@ identischer Betriebsstandard für Frontend und Backend.
 - Benutzerverwaltung
 - ReadOnly Viewer
 - Unit Tests
+- Reporting
+- Mitgliederverzeichnis
+- Geburtstagsliste
+- PDF-Reporting
 
 ---
 
@@ -793,7 +862,6 @@ Mögliche Erweiterungen:
 ## Nicht im MVP
 
 - Ehrungen
-- Berichte
 - Exporte
 - Mailfunktionen
 - Historisierung

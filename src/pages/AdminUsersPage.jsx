@@ -9,6 +9,7 @@ import {
   updateAdminUserRole,
 } from "../api/adminUserApi";
 import ErrorBox from "../components/common/ErrorBox";
+import BackLink from "../components/common/BackLink";
 
 const ROLES = ["ADMIN", "EDITOR", "VIEWER"];
 
@@ -156,9 +157,7 @@ export default function AdminUsersPage() {
 
   return (
     <main>
-      <Link to="/members" style={backLinkStyle}>
-        ← Zur Mitgliederliste
-      </Link>
+      <BackLink to="/members">Zur Mitgliederliste</BackLink>
 
       <h1>Benutzerverwaltung</h1>
 
@@ -307,14 +306,6 @@ function formatDateTime(value) {
 
   return new Date(value).toLocaleString("de-DE");
 }
-
-const backLinkStyle = {
-  display: "inline-block",
-  marginBottom: "1rem",
-  color: "#2563eb",
-  textDecoration: "none",
-  fontWeight: 600,
-};
 
 const statusMessageStyle = {
   color: "#2e7d32",

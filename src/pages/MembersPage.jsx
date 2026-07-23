@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { getMembers } from "../api/memberApi";
-import { getMemberStatuses, getVoices } from "../api/lookupApi";
+import { useQuery } from "@tanstack/react-query";
+import useMemberLookups from "../hooks/useMemberLookups";
 import ErrorBox from "../components/common/ErrorBox";
 import Pagination from "../components/members/list/Pagination";
 import MemberList from "../components/members/list/MemberList";
@@ -87,15 +87,7 @@ export default function MembersPage() {
     enabled: searchIsValid,
   });
 
-  const { data: statuses = [] } = useQuery({
-    queryKey: ["member-statuses"],
-    queryFn: getMemberStatuses,
-  });
-
-  const { data: voices = [] } = useQuery({
-    queryKey: ["voices"],
-    queryFn: getVoices,
-  });
+  const { statuses, voices } = useMemberLookups();
 
   const members = membersData?.items ?? [];
   const pagination = membersData?.pagination;

@@ -1,3 +1,7 @@
+import FilterChip from "../../common/filters/FilterChip";
+import FilterGroup from "../../common/filters/FilterGroup";
+import RemovableFilterChip from "../../common/filters/RemovableFilterChip";
+
 export default function MembersDirectoryFilterPanel({
   search,
   mitgliedsstatusIds,
@@ -79,27 +83,6 @@ export default function MembersDirectoryFilterPanel({
   );
 }
 
-function FilterGroup({ title, children }) {
-  return (
-    <div style={{ marginTop: "1rem" }}>
-      <strong>{title}</strong>
-      <div style={chipContainerStyle}>{children}</div>
-    </div>
-  );
-}
-
-function FilterChip({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={active ? activeChipStyle : chipStyle}
-    >
-      {children}
-    </button>
-  );
-}
-
 function ActiveFilterSummary({
   search,
   mitgliedsstatusIds,
@@ -152,22 +135,6 @@ function ActiveFilterSummary({
   );
 }
 
-function RemovableFilterChip({ children, onRemove }) {
-  return (
-    <span style={removableChipStyle}>
-      <span>{children}</span>
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label="Filter entfernen"
-        style={removeButtonStyle}
-      >
-        ×
-      </button>
-    </span>
-  );
-}
-
 function getSelectedOptions(selectedIds, options) {
   return selectedIds
     .map((id) => options.find((option) => String(option.id) === String(id)))
@@ -189,25 +156,6 @@ const filterTopRowStyle = {
   alignItems: "center",
 };
 
-const chipContainerStyle = {
-  display: "flex",
-  gap: "0.5rem",
-  flexWrap: "wrap",
-  marginTop: "0.5rem",
-};
-
-const chipStyle = {
-  borderRadius: "999px",
-  padding: "0.4rem 0.75rem",
-};
-
-const activeChipStyle = {
-  ...chipStyle,
-  backgroundColor: "#1f5fbf",
-  color: "#fff",
-  borderColor: "#1f5fbf",
-};
-
 const activeFilterSummaryStyle = {
   display: "flex",
   flexWrap: "wrap",
@@ -217,28 +165,4 @@ const activeFilterSummaryStyle = {
   paddingTop: "1rem",
   borderTop: "1px solid #edf0f3",
   color: "#555",
-};
-
-const removableChipStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "0.35rem",
-  backgroundColor: "#eef3fb",
-  color: "#1f4f8f",
-  borderRadius: "999px",
-  padding: "0.25rem 0.35rem 0.25rem 0.6rem",
-  fontSize: "0.85rem",
-  fontWeight: 600,
-};
-
-const removeButtonStyle = {
-  width: "1.4rem",
-  height: "1.4rem",
-  borderRadius: "999px",
-  padding: 0,
-  border: "none",
-  backgroundColor: "transparent",
-  color: "#1f4f8f",
-  fontWeight: 700,
-  lineHeight: 1,
 };
