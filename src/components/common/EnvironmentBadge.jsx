@@ -1,63 +1,69 @@
-import { useEffect, useState } from "react";
+const ENVIRONMENT_STYLES = {
+  LOCAL: {
+    backgroundColor: "#dbeafe",
+    color: "#1d4ed8",
+  },
+  DEV: {
+    backgroundColor: "#fef3c7",
+    color: "#92400e",
+  },
+  PROD: {
+    backgroundColor: "#dcfce7",
+    color: "#166534",
+  },
+};
 
-export default function EnvironmentBadge() {
-  const envName = "localhost";
-  const proxyTarget = "localhost:8080";
-  const frontendVersion = import.meta.env.VITE_APP_VERSION;
+export default function EnvironmentBadge({
+  environment,
+  loading = false,
+  error = false,
+}) {
+  const validEnvironment = Object.prototype.hasOwnProperty.call(
+    ENVIRONMENT_STYLES,
+    environment,
+  );
 
-  const [backendVersion, setBackendVersion] = useState(null);
+  const label = loading
+    ? "Wird geladen"
+    : validEnvironment
+      ? environment
+      : "Unbekannt";
 
-  useEffect(() => {
-    fetch("/api/system/info", {
-      credentials: "include",
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error("System info unavailable");
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setBackendVersion(data.backendVersion);
-      })
-      .catch(() => {
-        setBackendVersion("n/a");
-      });
-  }, []);
+  const colors = validEnvironment
+    ? ENVIRONMENT_STYLES[environment]
+    : {
+        backgroundColor: "#f3f4f6",
+        color: "#4b5563",
+      };
 
   return (
-    <div style={containerStyle}>
-      <span style={badgeStyle}>{envName}</span>
-      <span style={urlStyle}>Proxy → {proxyTarget}</span>
-      <span style={versionStyle}>FE v{frontendVersion}</span>
-      <span style={versionStyle}>BE v{backendVersion ?? "..."}</span>
-    </div>
+    <span
+      style={{
+        ...badgeStyle,
+        ...colors,
+      }}
+      title={
+        error
+          ? "Backend-Systeminformationen konnten nicht aktualisiert werden"
+          : "Backend-Laufzeitumgebung"
+      }
+    >
+      {label}
+      {error && validEnvironment ? " *" : ""}
+    </span>
   );
 }
 
-const containerStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-};
-
 const badgeStyle = {
-  color: "#fff",
-  backgroundColor: "#1565c0",
-  padding: "0.3rem 0.65rem",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "0.35rem 0.7rem",
   borderRadius: "999px",
   fontWeight: 700,
-  fontSize: "0.8rem",
-};
-
-const urlStyle = {
-  fontSize: "0.8rem",
-  color: "#555",
-  fontFamily: "monospace",
-};
-
-const versionStyle = {
-  fontSize: "0.8rem",
-  color: "#6b7280",
-  fontFamily: "monospace",
+  fontSize: "0.75rem",
+  letterSpacing: "0.03em",
+  whiteSpace: "nowrap",
+  height: "36px",
+  boxSizing: "border-box",
 };
