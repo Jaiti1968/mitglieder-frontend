@@ -78,7 +78,13 @@ export function isDateInFuture(value) {
     return false;
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  const today = `${year}-${month}-${day}`;
+
   return parseGermanDateToIso(value) > today;
 }
 

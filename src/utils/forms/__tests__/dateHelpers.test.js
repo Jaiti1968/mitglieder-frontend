@@ -56,6 +56,14 @@ describe("dateHelpers", () => {
       expect(isDateInFuture("15.05.2026")).toBe(false);
     });
 
+    it("uses local calendar date instead of UTC date", () => {
+      // 15.05.2026, 22:30 UTC = 16.05.2026, 00:30 in Deutschland
+      vi.setSystemTime(new Date("2026-05-15T22:30:00Z"));
+
+      expect(isDateInFuture("16.05.2026")).toBe(false);
+      expect(isDateInFuture("17.05.2026")).toBe(true);
+    });
+
     it("returns false for past date", () => {
       expect(isDateInFuture("14.05.2026")).toBe(false);
     });
