@@ -1,176 +1,89 @@
 # EMC Mitgliederverwaltung – Frontend Developer Guide
 
-## Zweck
+**Dokumentstand:** 17.11.2026
 
-Dieses Dokument beschreibt die technische Architektur und Entwicklungsrichtlinien des Frontends.
+**Geprüfte Codebasis:** `mitglieder-frontend(3).zip` (Version `1.2.3` laut dortiger `package.json`)
 
-Zielgruppe:
+**Hinweis zur Weiterentwicklung:** Auf dem neuen Branch `feature/BL-009-ehrungen` wurde die Paketversion inzwischen auf `1.3.0-SNAPSHOT` gesetzt. Die hier beschriebenen vorhandenen Funktionen entsprechen weiterhin dem geprüften Stand `1.2.3`; die Frontend-Implementierung von BL-009 steht noch aus.
 
-- Frontend-Entwicklung
-- Backend-Entwicklung mit Frontend-Schnittstellenbezug
-- technische Weiterentwicklung
+## 1. Zweck und Dokumentationsgrenzen
 
-Dieses Dokument ist kein Benutzerhandbuch.
+Dieses Dokument beschreibt die technische Struktur des Frontends, Entwicklungsregeln und die vorhandenen Mechanismen für API-Zugriff, Formulare und Tests. Es ist kein Benutzerhandbuch und keine Betriebsanleitung.
 
----
+- `README.md` im Frontend-Repository: Einstieg, Funktionsüberblick und lokaler Schnellstart.
+- `README_DEVELOPER.md`: Entwicklungsarchitektur und konkrete Konventionen des Frontends.
+- **EMC-DOKUMENTATION**: Anforderungen, Fach- und technische Konzepte, Entscheidungen, Ergebnisdokumente und Projektstand (einschließlich BL-009 bis BL-011).
+- **EMC-INFRA**: Infrastruktur, Umgebungen, Konfiguration, Docker/Compose, Deployment, Betrieb und Runbooks.
 
-# Technologie Stack
+Betriebsanweisungen werden nicht parallel in diesem Dokument gepflegt. Bei Widersprüchen zu Infrastrukturdetails sind die aktuellen Unterlagen in EMC-INFRA zu prüfen.
 
-## Core
+## 2. Technologie und Build
 
-- React 19
-- Vite
-- JavaScript
-- Vite Build Metadata (`package.json version`)
+| Bereich | Implementierung |
+| --- | --- |
+| Oberfläche | React 19, JavaScript |
+| Build/Entwicklung | Vite 6 |
+| Navigation | React Router 7 |
+| Serverdaten | TanStack React Query 5 |
+| Formulare | React Hook Form 7 |
+| Tests | Vitest 4 über `scripts/run-vitest.mjs` |
+| Statische Bereitstellung | Docker mit NGINX |
 
-## Routing
+Maßgeblich für die exakten Versionen sind `package.json` und `package-lock.json`.
 
-- React Router
-
-## State / Server State
-
-- TanStack React Query
-
-## Formulare
-
-- React Hook Form
-
-## Tests
-
-- Vitest
-
-## Deployment
-
-- Docker
-
----
-
-# Architekturüberblick
-
-Grundstruktur:
-
-```text
-Pages
-→ Feature Components
-→ Shared Components (Beispiele: BackLink, FilterChip)
-→ Hooks
-→ API Layer
-→ Spring Boot Backend
+```bash
+npm ci
+npm run dev
+npm run lint
+npm run test:run
+npm run build
+npm run preview
 ```
 
-Designprinzipien:
+`npm test` ruft ebenfalls das projektspezifische Vitest-Startskript auf. Für einen einmaligen vollständigen Testlauf eignet sich `npm run test:run`.
 
-- klare Verantwortlichkeiten
-- Wiederverwendung
-- kleine Komponenten
-- API-Zugriffe zentral
-- Formularlogik entkoppelt
-- Backend als Source of Truth
+In `vite.config.js` wird `/api` für die lokale Entwicklung derzeit an `http://localhost:8080` weitergeleitet. Diese Einstellung ist eine Entwicklungsproxy-Konfiguration und keine Beschreibung der NAS-Umgebungen.
 
----
-
-# Projektstruktur
+## 3. Projektstruktur
 
 ```text
-src
-├── api
-├── auth
-├── components
-│   ├── common
-│   ├── forms
-│   ├── layouts
-│   ├── members
-│   └── reporting
-├── hooks
-│   ├── forms
-│   └── useMemberLookups.js
-├── pages
-├── routes
-├── utils
-│   └── forms
-└── tests
+src/
+├── api/                  # API-Client und fachliche API-Module
+├── auth/                 # Session, Login und Routenschutz
+├── components/
+│   ├── common/           # Gemeinsame UI-Elemente
+│   ├── forms/            # Gemeinsame Formularfelder
+│   ├── layouts/          # AppLayout
+│   ├── members/          # Mitgliederliste und Mitgliederdetails
+│   └── reporting/        # Reporting-Komponenten
+├── hooks/                # AutoSave, Lookups, Systeminformationen
+│   └── forms/
+├── pages/                # Seitenkomponenten
+├── routes/               # Routen
+└── utils/forms/          # Validierung, Payloads, Defaults, Datumshelfer
 ```
 
----
+Grundprinzip: Seiten koordinieren Navigation und Datenzugriff, fachliche Komponenten stellen Inhalte dar, Hooks bündeln wiederkehrendes Verhalten, und API-Funktionen kapseln die Backend-Kommunikation.
 
-# Routing
+## 4. Routing und Zugriffsschutz
 
-Definition:
+Routendefinition: `src/routes/AppRoutes.jsx`.
 
-```text
-src/routes/AppRoutes.jsx
-```
+| Route | Zweck |
+| --- | --- |
+| `/login` | Anmeldung (öffentlich) |
+| `/members` | Mitgliederliste |
+| `/members/new` | Mitglied anlegen |
+| `/members/:mitgliedsnummer` | Mitgliederdetails |
+| `/admin/users` | Benutzerverwaltung |
+| `/reporting` | Berichtsübersicht und Geburtstagsliste |
+| `/reporting/members-directory` | Mitgliederverzeichnis |
 
-Aktuelle Routen:
+`/` leitet auf `/members` um. Die geschützten Seiten liegen unter `ProtectedRoute` und `AppLayout`. Die Geburtstagsliste besitzt keine eigene Route, sondern wird innerhalb des Reporting-Bereichs ausgewählt.
 
-```text
-/login
-/members
-/members/new
-/members/:mitgliedsnummer
-/admin/users
-```
+## 5. Authentifizierung und Rollen
 
----
-
-## Routing-Regeln
-
-Geschützte Routen laufen über:
-
-```text
-ProtectedRoute
-```
-
-Layout:
-
-```text
-AppLayout
-```
-
-Öffentliche Route:
-
-```text
-/login
-```
-
-Geschützt:
-
-```text
-/members
-/members/new
-/members/:mitgliedsnummer
-/admin/users
-```
-
----
-
-# Auth Architektur
-
-Ordner:
-
-```text
-src/auth
-```
-
-Komponenten:
-
-- `AuthProvider`
-- `ProtectedRoute`
-- `useAuth`
-
----
-
-## AuthProvider
-
-Verantwortung:
-
-- Session Restore
-- User State
-- Login
-- Logout
-- Loading State
-
-Backend-Endpunkte:
+Die Anmeldung erfolgt über eine Backend-Session mit Cookie. Zuständig sind `src/auth/AuthContext.jsx`, `ProtectedRoute.jsx` und `useAuth.js`; die Auth-Endpunkte werden über `src/auth/authApi.js` angesprochen.
 
 ```http
 POST /api/auth/login
@@ -178,916 +91,121 @@ POST /api/auth/logout
 GET /api/auth/me
 ```
 
----
+Rollen: `ADMIN`, `EDITOR`, `VIEWER`. `ADMIN` kann die Benutzerverwaltung nutzen; `ADMIN` und `EDITOR` können die vorhandenen Mitgliedsformulare bearbeiten; `VIEWER` erhält eine lesende Darstellung. Reporting wird in der Oberfläche für `ADMIN` angeboten. Maßgeblich für die tatsächlichen Zugriffsrechte ist stets das Backend.
 
-## ProtectedRoute
+**Entwicklungsregel:** Das Ausblenden von Schaltflächen ersetzt keine serverseitige Autorisierung.
 
-Verhindert Zugriff ohne Session.
+## 6. API-Schicht und Fehlerbehandlung
 
-Verhalten:
+Die zentralen API-Module befinden sich in `src/api/`:
 
-keine Session:
+- `apiClient.js`: `apiGet`, `apiPost`, `apiPut`, gemeinsames Response- und Fehlermanagement.
+- `memberApi.js`: Mitgliederdaten.
+- `lookupApi.js`: Nachschlagewerte.
+- `adminUserApi.js`: Benutzerverwaltung.
+- `reportingApi.js`: Berichtsaufrufe.
 
-```text
-redirect → /login
-```
+`authApi.js` liegt im Ordner `src/auth/` und ist daher **nicht** Teil von `src/api/`.
 
-Session vorhanden:
+Der gemeinsame Client sendet Requests mit `credentials: "include"`. Bei `204 No Content` liefert er `null`. Bei Fehlerantworten stellt er unter anderem `status`, `requestId` und `validationErrors` bereit; bei `401` erfolgt eine Weiterleitung auf `/login`.
 
-```text
-Render geschützter Bereich
-```
+**Aktuelle Grenze:** Eine allgemeine Funktion `apiDelete` ist im geprüften Stand noch nicht vorhanden. Sie wird für BL-009 benötigt.
 
----
+API-Aufrufe fachlicher Komponenten sollen grundsätzlich über die API-Schicht laufen. Der technische Abruf von `/api/system/info` ist aktuell im Hook `useSystemInfo.js` implementiert und bildet eine bestehende Ausnahme.
 
-## useAuth
+## 7. Serverdaten mit React Query
 
-Zentrale API:
+TanStack React Query verwaltet unter anderem Mitglieder-, Lookup-, Benutzer- und Reporting-Daten. Fachliche Mutationen müssen betroffene Abfragen nach erfolgreichem Schreiben aktualisieren beziehungsweise invalidieren.
 
-```javascript
-const { user, login, logout, isAuthenticated, isLoading } = useAuth();
-```
+Serverdaten nicht zusätzlich ohne konkreten Grund in einem globalen lokalen Zustand spiegeln. Lade-, Fehler- und Aktualisierungszustände gehören zur jeweiligen Datenabfrage beziehungsweise Mutation.
 
----
+## 8. Mitgliederansicht und Formulare
 
-# Rollenmodell
+Die Mitgliederdetails werden durch `src/pages/MemberDetailPage.jsx` koordiniert. `MemberTabs.jsx` enthält im geprüften Stand fünf Bereiche:
 
-Unterstützte Rollen:
+1. Stammdaten
+2. Kontakt
+3. Mitgliedschaft
+4. Datenschutz
+5. Chorkleidung
 
-```text
-ADMIN
-EDITOR
-VIEWER
-```
+Die Formulare liegen unter `src/components/members/details/`. Gemeinsame Eingabekomponenten (`FormField`, `SelectField`, `CheckboxField`, `DateField`) liegen unter `src/components/forms/`.
 
----
+`src/utils/forms/` enthält Validierungsfunktionen, Payload-Erzeugung, Standardwerte und Datumshelfer. Neue Formulare sollten diese Trennung beibehalten. Das Backend bleibt für die verbindliche fachliche Validierung zuständig; die Frontend-Validierung dient zusätzlich einer verständlichen Eingabeführung.
 
-## UI Verhalten
+## 9. AutoSave und Schutz vor Datenverlust
 
-### ADMIN
+Der vorhandene Hook `src/hooks/forms/useAutoSaveForm.js` verwendet React Hook Form und `useWatch`. Der Standard-Debounce beträgt **500 ms**. Er unterstützt unter anderem Validierung, Payload-Erzeugung, Rückmeldungen zu Speicheroperationen und die Zuordnung von Backend-Validierungsfehlern.
 
-Vollzugriff:
+Ergänzende Bausteine:
 
-- lesen
-- anlegen
-- bearbeiten
-- löschen
-- Benutzerverwaltung
+- `useAutoSaveStatus.js`: Anzeige- und Fehlerzustände von Speichervorgängen.
+- `useUnsavedChanges.js`: Erkennung und Behandlung ausstehender Änderungen beim Verlassen der Mitgliederseite.
+- `UnsavedChangesDialog.jsx`: Bestätigungsdialog bei möglichen Datenverlusten.
 
----
+**Technische Einschränkungen des geprüften Stands:** Die vorhandene AutoSave-Logik verhindert nicht grundsätzlich parallele bereits gestartete Requests. Änderungen während der Debounce-Wartezeit werden durch den Status-Hook allein nicht vollständig als ausstehend erfasst. Beim Schließen eines einzelnen Bearbeitungsdialogs ist deshalb eine gesonderte Absicherung erforderlich.
 
-### EDITOR
+Für neue Dialoge ist vor der Wiederverwendung des Hooks zu prüfen, ob laufende Requests, fehlgeschlagene Speicherungen und das Schließen des Dialogs korrekt behandelt werden. Die bestehenden Mitgliedsformulare werden im Rahmen von BL-009 nicht pauschal umgebaut.
 
-Erlaubt:
+## 10. Systeminformationen und Laufzeitumgebung
 
-- lesen
-- anlegen
-- bearbeiten
+Die aktuelle Anzeige besteht aus:
 
-Nicht erlaubt:
+- `src/components/common/EnvironmentBadge.jsx`: kompakte Kennzeichnung `LOCAL`, `DEV` oder `PROD`.
+- `src/components/common/SystemInfoDialog.jsx`: detaillierte Systeminformationen.
+- `src/hooks/useSystemInfo.js`: Abruf und Aktualisierung von `GET /api/system/info`.
 
-- löschen
-- Benutzerverwaltung
-
----
-
-### VIEWER
-
-Nur ReadOnly.
-
-Keine Änderungen.
-
----
-
-# API Layer
-
-Ordner:
-
-```text
-src/api
-```
-
-Aktuelle Module:
-
-- `authApi.js`
-- `memberApi.js`
-- `lookupApi.js`
-- `adminUserApi.js`
-- `reportingApi.js`
-
-Hinweis:
-
-Systeminformationen werden aktuell direkt in `EnvironmentBadge` geladen.
-
-Eine spätere Auslagerung nach:
-
-```text
-systemApi.js
-```
-
-ist möglich.
-
----
-
-## Regeln
-
-API-Aufrufe nur hier.
-
-Keine direkten Fetch-Aufrufe in Pages/Components.
-
-Beispiel:
-
-gut:
+Die Umgebungskennung wird anhand der Backend-Antwort geprüft. Der Systeminfo-Dialog kann unter anderem Frontend-/Backend-Version, Build-Zeitpunkte und Backend-Profile anzeigen. Die Frontend-Version und Build-Zeit werden über `vite.config.js` aus der Paketversion beziehungsweise dem Build-Zeitpunkt eingebettet:
 
 ```javascript
-await login(credentials);
+import.meta.env.VITE_APP_VERSION
+import.meta.env.VITE_APP_BUILD_TIME
 ```
 
-schlecht:
+Die frühere Darstellung von Proxy-Zielen und technischen Verbindungsdetails im allgemeinen Umgebungsindikator ist **nicht** mehr der aktuelle Stand. Angaben zur betrieblichen Zuordnung von LOCAL/DEV/PROD stehen in EMC-INFRA; Anforderungen und Entscheidungen zur Anzeige in EMC-DOKUMENTATION (BL-019).
 
-```javascript
-fetch("/api/auth/login");
-```
+## 11. Reporting
 
----
+Vorhanden sind die Reporting-Übersicht, das Mitgliederverzeichnis und die Geburtstagsliste. Das Mitgliederverzeichnis unterstützt PDF- und Excel-Export; die Geburtstagsliste PDF-Export.
 
-# React Query
+Die Implementierung verteilt sich auf `src/pages/`, `src/components/reporting/` und `src/api/reportingApi.js`. Fachliche Regeln, Berichtsumfang und Umsetzungsergebnisse sind in EMC-DOKUMENTATION unter BL-012/BL-020 beschrieben.
 
-Verwendung für:
+## 12. Automatisierte Tests
 
-- Member Daten
-- Lookup Daten
-- Admin User Daten
-- Reporting Daten
-
-Verantwortung:
-
-- Caching
-- Refetch
-- Loading States
-- Mutation Handling
-
----
-
-## Regeln
-
-Serverdaten niemals manuell global spiegeln.
-
-React Query ist Source of Truth.
-
----
-
-# Pages
-
-Ordner:
-
-```text
-src/pages
-```
-
-Aktuell:
-
-- `LoginPage`
-- `MembersPage`
-- `MemberDetailPage`
-- `CreateMemberPage`
-- `AdminUsersPage`
-- `ReportingPage`
-- `ReportingMembersDirectoryPage`
-
----
-
-## Verantwortlichkeit
-
-Pages:
-
-- Seitennavigation
-- Daten laden
-- Seitenlayout
-- Containerlogik
-
-Keine komplexe Formularlogik.
-
----
-
-# Components
-
-## Shared Components
-
-Ordner:
-
-```text
-src/components/common
-```
-
-Beispiele:
-
-- ErrorBox
-- EnvironmentBadge
-
-EnvironmentBadge zeigt:
-
-- Umgebung (derzeit aus Frontend-Konfiguration abgeleitet)
-- Proxy-Ziel
-- Frontend-Version
-- Backend-Version
-
-Hinweis:
-
-Die aktuelle Umgebungsanzeige basiert auf Frontend-Konfigurationsinformationen und ist nicht in allen Deployment-Szenarien eindeutig.
-
-Eine zukünftige Version soll die Umgebungskennung über den Backend-Endpunkt
-
-GET /api/system/info
-
-bereitstellen und damit DEV/PROD eindeutig anzeigen.
-
----
-
-## Layout Components
-
-Ordner:
-
-```text
-src/components/layouts
-```
-
-Aktuell:
-
-- AppLayout
-
----
-
-## Feature Components
-
-Ordner:
-
-```text
-src/components/members
-src/components/reporting
-```
-
-Mitglieder-bezogene Komponenten.
-Browserbasierte Reporting-Komponenten einschließlich Mitgliederverzeichnis und Geburtstagsliste.
-
----
-
-# Versionsinformationen
-
-Das Frontend unterstützt technische Versionsanzeige für Betrieb, Deployment-Kontrolle und Fehlerdiagnose.
-
-## Frontend-Version
-
-Quelle:
-
-```text
-package.json
-```
-
-Beispiel Entwicklungsstand:
-
-```json
-"version": "1.1.2-SNAPSHOT"
-```
-
-Beispiel Release:
-
-```json
-"version": "1.1.1"
-```
-
-Bereitstellung via Vite:
-
-```javascript
-import.meta.env.VITE_APP_VERSION;
-```
-
-Konfiguration:
-
-```javascript
-// vite.config.js
-"import.meta.env.VITE_APP_VERSION": JSON.stringify(packageJson.version)
-```
-
-Wichtig:
-
-Die Frontend-Version wird zum Build-Zeitpunkt aus `package.json` übernommen.
-
-Vor einem Release-Build muss daher geprüft werden, dass eine Release-Version ohne `-SNAPSHOT` gesetzt ist.
-
-Nach Abschluss eines Releases wird die Entwicklungsversion auf die nächste Snapshot-Version angehoben.
-
-## Backend-Version
-
-Quelle:
-
-```http
-GET /api/system/info
-```
-
-Beispiel Response:
-
-```json
-{
-  "backendVersion": "1.1.2"
-}
-```
-
-Der Endpoint ist authentifiziert und nutzt die bestehende Session.
-
-Request:
-
-```javascript
-fetch("/api/system/info", {
-  credentials: "include",
-});
-```
-
-## Anzeige
-
-Komponente:
-
-```text
-src/components/common/EnvironmentBadge.jsx
-```
-
-Beispiel DEV:
-
-```text
-<Umgebung> | FE v1.1.2-SNAPSHOT | BE v1.1.2-SNAPSHOT
-```
-
-Beispiel PROD:
-
-```text
-<Umgebung> | FE v1.1.1 | BE v1.1.1
-```
-
-## Zweck
-
-- Deployment-Verifikation
-- Versionskontrolle DEV/PROD
-- Support / Diagnose
-- Erkennung von Versions-Mismatch
-
----
-
-# Form Architektur
-
-## Shared Form Components
-
-Ordner:
-
-```text
-src/components/forms
-```
-
-Aktuell:
-
-- `FormField`
-- `SelectField`
-- `CheckboxField`
-- `DateField`
-
----
-
-## Regeln
-
-Neue Form Controls zuerst hier prüfen.
-
-Keine redundanten Feldkomponenten erzeugen.
-
----
-
-# React Hook Form
-
-Verwendung in Formularen.
-
-Pattern:
-
-```javascript
-useForm({
-  mode: "onChange",
-});
-```
-
----
-
-## Regeln
-
-Validierung zentral.
-
-Keine verstreute Inline-Validierungslogik.
-
----
-
-# AutoSave Architektur
-
-Zentrale Hook:
-
-```text
-src/hooks/forms/useAutoSaveForm.js
-```
-
----
-
-## Verantwortung
-
-- Watch Formularzustand
-- Debounce
-- Validation
-- Payload Build
-- Save Trigger
-- Serverfehler Mapping
-- Success/Error Handling
-
----
-
-## Pattern
-
-Form:
-
-```javascript
-useAutoSaveForm({
-  control,
-  validate,
-  buildPayload,
-});
-```
-
----
-
-## Regeln
-
-Neue AutoSave Formulare müssen diese Hook nutzen.
-
-Keine individuelle Debounce-Logik pro Formular.
-
----
-
-# Form Utilities
-
-Ordner:
-
-```text
-src/utils/forms
-```
-
-Bereiche:
-
-- validators
-- payloads
-- defaults
-- validationHelpers
-- dateHelpers
-
----
-
-## validators
-
-Fachliche Frontend-Validierung.
-
-Beispiele:
-
-- `validateStammdaten`
-- `validateKontakt`
-- `validateMitgliedschaft`
-- `validateDatenschutz`
-- `validateChorkleidung`
-
----
-
-## payloads
-
-Form → Backend DTO Mapping.
-
----
-
-## defaults
-
-Initialwerte / Reset Mapping.
-
----
-
-## dateHelpers
-
-Datumsverarbeitung.
-
----
-
-## validationHelpers
-
-gemeinsame Hilfsfunktionen.
-
----
-
-# Member Detail Architektur
-
-Tabs:
-
-- Stammdaten
-- Kontakt
-- Mitgliedschaft
-- Datenschutz
-- Chorkleidung
-
-Form-Komponenten:
-
-- `MemberStammdatenForm`
-- `MemberContactForm`
-- `MemberMembershipForm`
-- `MemberDatenschutzForm`
-- `MemberChorkleidungForm`
-
----
-
-## Rollensteuerung
-
-ReadOnly wird über Props gesteuert:
-
-```javascript
-readOnly={true}
-```
-
-VIEWER darf niemals editieren.
-
----
-
-# Admin User Management
-
-Page:
-
-```text
-AdminUsersPage
-```
-
-API:
-
-```text
-adminUserApi.js
-```
-
-Nur ADMIN.
-
-Funktionen:
-
-- Benutzerliste
-- Benutzer anlegen
-- Rolle ändern
-- aktiv/inaktiv
-- Passwort setzen
-
----
-
-# Fehlerbehandlung
-
-## API Fehler
-
-Anzeige:
-
-- ErrorBox
-- Formularfeldfehler
-
----
-
-## Login Fehler
-
-Neutral:
-
-```text
-Anmeldung nicht möglich.
-```
-
----
-
-## Rollenfehler
-
-Backend liefert:
-
-```http
-403
-```
-
-UI blendet Funktionen idealerweise vorher aus.
-
----
-
-# Testing
-
-Framework:
-
-```text
-Vitest
-```
-
-Aktueller Stand:
-
-```text
-64 Tests
-```
-
-Abgedeckt:
-
-- validationHelpers
-- dateHelpers
-- stammdatenValidator
-- membershipValidator
-- contactValidator
-- datenschutzValidator
-- chorkleidungValidator
-
----
-
-## Teststrategie
-
-Frontend Fokus:
-
-- Formularlogik
-- Validatoren
-- Helper
-
-Nicht primär:
-
-- visuelle Snapshot Tests
-- komplexe UI Integration
-
----
-
-# Entwicklungsworkflow
-
-Branching Pattern:
-
-Feature:
-
-```text
-feature/*
-```
-
-Refactoring:
-
-```text
-refactor/*
-```
-
-Docs:
-
-```text
-docs/*
-```
-
----
-
-## Beispiel
-
-```text
-feature/security-hardening
-refactor/forms
-docs/readme-update-phase3
-```
-
----
-
-# Entwicklungsregeln
-
-Gemeinsam genutzte UI-Elemente sollen bevorzugt als Komponenten unter `src/components/common` umgesetzt werden.
-
-Wiederkehrende Datenbeschaffung soll über gemeinsame Hooks unter `src/hooks` erfolgen.
-
-Dadurch werden doppelte Implementierungen vermieden und eine konsistente Architektur gefördert.
-
-## Komponenten
-
-Bevorzugt:
-
-- kleine Komponenten
-- klarer Scope
-- Wiederverwendung
-
-Vermeiden:
-
-- Monster-Komponenten
-- doppelte Logik
-
----
-
-## State
-
-Lokal:
-
-UI State
-
-React Query:
-
-Server State
-
-AuthProvider:
-
-Session/Auth State
-
----
-
-## API
-
-Keine Fetch-Aufrufe direkt in Components.
-
-(Ausnahme aktuell: technischer System-Info Abruf im `EnvironmentBadge`.)
-
----
-
-## Validierung
-
-Backend bleibt Source of Truth.
-
-Frontend validiert primär UX-orientiert.
-
----
-
-## Security
-
-Keine Sicherheitslogik nur im Frontend.
-
-Berechtigungen immer zusätzlich im Backend.
-
----
-
-# Docker Deployment
-
-## Docker Artefakte
-
-```text
-Dockerfile
-.dockerignore
-
-docker/
-├── nginx-local.conf
-├── nginx-dev.conf
-└── nginx-prod.conf
-```
-
-## Deployment Architektur
-
-Frontend wird image-basiert betrieben.
-
-Ablauf:
-
-```text
-1. package.json Version prüfen
-2. npm run build
-3. Docker Image Build
-4. docker save
-5. Übertragung auf NAS
-6. docker load
-7. Portainer Redeploy
-8. Smoke Test
-9. Browser-Cache prüfen / Seite neu laden
-```
-
-Runtime:
-
-```text
-nginx:alpine
-```
-
-## Image Versionierung
-
-Image Tags enthalten die Anwendungsversion.
-
-Beispiel:
-
-```text
-DEV:
-emc-mitglieder-frontend:X.Y.Z-SNAPSHOT
-
-PROD:
-emc-mitglieder-frontend:X.Y.Z
-```
-
-Build-Plattform:
-
-linux/arm64
-
-NAS-Deployments müssen ARM64-kompatible Images erzeugen.
-
-Beispiel:
-
-docker build \
- --platform linux/arm64 \
- --build-arg NGINX_CONF=nginx-prod.conf \
- -t emc-mitglieder-frontend:1.1.1 .
-
-Dadurch bleiben Deployments und Rollbacks nachvollziehbar.
-
----
-
-# Build
-
-Development:
+Die Frontend-Tests verwenden Vitest und konzentrieren sich im geprüften Stand auf Formularvalidierung und Hilfsfunktionen, insbesondere `validationHelpers`, `dateHelpers` sowie die Validatoren für Stammdaten, Mitgliedschaft, Kontakt, Datenschutz und Chorkleidung.
 
 ```bash
-npm install
-npm run dev
-```
-
-Tests:
-
-```bash
-npm test
-```
-
-Build:
-
-```bash
+npm run test:run
+npm run lint
 npm run build
 ```
 
-Voraussetzungen:
+Eine feste Anzahl erfolgreicher Tests wird nicht dokumentiert: Der jeweils aktuelle Testlauf ist maßgeblich. Für neue Funktionen sind geeignete Tests der fachlichen Logik und, soweit erforderlich, der API-Interaktion und Dialogzustände zu ergänzen.
 
-Hinweis:
+## 13. Entwicklungsworkflow und Versionierung
 
-Für den anschließenden Docker Image Build muss Docker Desktop gestartet und die Docker Engine erreichbar sein.
+Änderungen erfolgen auf dafür vorgesehenen Git-Branches, beispielsweise `feature/BL-009-ehrungen`. Vor einem Commit sollten Tests und Build entsprechend der Änderung geprüft werden. Merge, Image-Erstellung und Deployment erfolgen als gesonderte Arbeitsschritte.
 
-Vor Release-Builds ist die Version in package.json zu prüfen.
+Die Version wird in `package.json` geführt und von Vite zur Build-Zeit eingebettet. `npm version <version> --no-git-tag-version` aktualisiert die Paketversion ohne Git-Tag; bei vorhandenem Lockfile wird dieses mit angepasst.
 
-Dabei wird die Frontend-Version aus:
+Aktueller Kontext:
 
-```text
-package.json
-```
+- Geprüfter und dokumentierter Funktionsstand: `1.2.3`.
+- Neuer Entwicklungsbranch für BL-009: `feature/BL-009-ehrungen`, Paketversion `1.3.0-SNAPSHOT`.
+- Die README-Dateien werden nach Implementierung und Prüfung der Ehrungen erneut auf den dann erreichten Funktionsstand gebracht.
 
-in die Anwendung eingebettet.
+## 14. Docker und Betrieb
 
-Preview:
+Das Repository enthält Docker- und NGINX-Konfigurationen für die Frontend-Bereitstellung. Die Anwendung wird im Container über NGINX ausgeliefert. Für konkrete Build-Plattformen, Image-Tags, NAS-Zielumgebungen, Compose-Dateien, Rollback und Deployment-Abläufe ist **EMC-INFRA** maßgeblich.
 
-```bash
-npm run preview
-```
+In diesem Dokument werden bewusst keine möglicherweise veralteten Image-Build- oder Portainer-Anweisungen dupliziert.
 
----
+## 15. Abgrenzung und nächste Entwicklung
 
-## Lokaler Docker Test
+**BL-009 Ehrungen ist im geprüften Frontend noch nicht implementiert.** Für die anstehende Umsetzung gelten das freigegebene `BL-009-frontend-konzept-v0.1.md` und die Anforderungen `BL-009-ehrungen-v0.2.md` in EMC-DOKUMENTATION.
 
-Build:
+Vorgesehen sind ein Ehrungsreiter, die Ehrungsliste, ein Anlegedialog mit explizitem Speichern, ein Bearbeitungsdialog mit abgesichertem AutoSave und eine bestätigungspflichtige Löschfunktion. Die Sortierung liefert das Backend. Bei Ehrungen ist dieselbe Ehrungsart pro Mitglied nur einmal zulässig; für BL-010 Funktionen gelten andere fachliche Regeln.
 
-```bash
-docker build \
-  --platform linux/arm64 \
-  --build-arg NGINX_CONF=nginx-prod.conf \
-  -t emc-mitglieder-frontend:1.1.1 .
-```
+BL-010 Funktionen und BL-011 Verteiler sind ebenfalls **keine vorhandenen Frontend-Funktionen** dieses dokumentierten Stands. Gemeinsame UI-Bausteine können später wiederverwendet werden, die fachlichen Prüfungen bleiben getrennt.
 
-Start:
-
-```bash
-docker run -p 8088:80 emc-mitglieder-frontend:local
-```
-
----
-
-# Deployment Kontext
-
-Ziel:
-
-```text
-Docker Container auf UGREEN NAS
-```
-
-Kommunikation:
-
-```text
-Frontend → Backend REST API
-```
-
-Technischer System-Endpoint:
-
-```http
-GET /api/system/info
-```
-
-Session basiert über Browser Cookie.
-
-Betriebsstandard:
-
-```text
-Git Repository
-→ Build-Artefakte
-→ Docker Image
-→ Docker Compose
-→ NAS Deployment
-```
-
-Die operative Compose Source of Truth liegt im Repository:
-
-```text
-emc-infra
-```
-
----
-
-# Geplante technische Erweiterungen
-
-- Session Timeout UX
-- Auto Logout Hinweis
-- Passwortwechsel UI
-- Passwort Reset UI
-- zusätzliche Integrationstests
-- Rollen-/Security UX Optimierung
+Weitere technische Erweiterungen und ihre Priorisierung werden in EMC-DOKUMENTATION geführt und nicht durch diese README neu beschlossen.
