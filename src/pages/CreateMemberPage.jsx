@@ -10,12 +10,15 @@ import MemberTabs from "../components/members/details/MemberTabs";
 import MemberSection from "../components/members/details/MemberSection";
 import ErrorBox from "../components/common/ErrorBox";
 import BackLink from "../components/common/BackLink";
+import { validateMemberCreation } from "../utils/forms/validateMemberCreation";
 
 export default function CreateMemberPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("stammdaten");
+
+  const [stammdatenBearbeitet, setStammdatenBearbeitet] = useState(false);
 
   const [stammdaten, setStammdaten] = useState({
     personFirma: false,
@@ -41,8 +44,8 @@ export default function CreateMemberPage() {
   const [mitgliedschaft, setMitgliedschaft] = useState({
     eintritt: "",
     austritt: "",
-    mitgliedsstatusId: "",
-    stimmeId: "",
+    mitgliedsstatusId: "4",
+    stimmeId: "6",
     kammerchor: false,
   });
 
@@ -64,14 +67,88 @@ export default function CreateMemberPage() {
     },
   });
 
-  const isFirma = stammdaten.personFirma === true;
+  function handleStammdatenChange(values) {
+    setStammdatenBearbeitet(true);
+    setStammdaten(values);
+  }
 
-  const vornameVorhanden = stammdaten.vorname?.trim().length > 0;
-  const nachnameVorhanden = stammdaten.nachname?.trim().length > 0;
+  const { stammdatenErrors, kontaktErrors, mitgliedschaftErrors, canCreate } =
+    validateMemberCreation(stammdaten, kontakt, mitgliedschaft);
 
-  const canCreate = isFirma
-    ? nachnameVorhanden
-    : vornameVorhanden && nachnameVorhanden;
+  const validationErrors = [
+    ...stammdatenErrors,
+    ...kontaktErrors,
+    ...mitgliedschaftErrors,
+  ];
+
+  const fieldLabels = {
+    vorname: {
+      tab: "Stammdaten",
+      label: stammdaten.personFirma ? "Firmenzusatz" : "Vorname",
+    },
+    nachname: {
+      tab: "Stammdaten",
+      label: stammdaten.personFirma ? "Firmenname" : "Nachname",
+    },
+    anrede: {
+      tab: "Stammdaten",
+      label: "Anrede",
+    },
+    akademischerTitel: {
+      tab: "Stammdaten",
+      label: "Akademischer Titel",
+    },
+    geburtsdatum: {
+      tab: "Stammdaten",
+      label: "Geburtsdatum",
+    },
+    plz: {
+      tab: "Stammdaten",
+      label: "PLZ",
+    },
+    ort: {
+      tab: "Stammdaten",
+      label: "Ort",
+    },
+    strasseHausNr: {
+      tab: "Stammdaten",
+      label: "Straße/Hausnummer",
+    },
+    email: {
+      tab: "Kontakt",
+      label: "E-Mail",
+    },
+    adresszusatz: {
+      tab: "Kontakt",
+      label: "Adresszusatz",
+    },
+    eintritt: {
+      tab: "Mitgliedschaft",
+      label: "Eintritt",
+    },
+    austritt: {
+      tab: "Mitgliedschaft",
+      label: "Austritt",
+    },
+    mitgliedsstatusId: {
+      tab: "Mitgliedschaft",
+      label: "Mitgliederstatus",
+    },
+    stimmeId: {
+      tab: "Mitgliedschaft",
+      label: "Stimme",
+    },
+  };
+
+  const saveTooltip = validationErrors
+    .map((error) => {
+      const field = fieldLabels[error.field];
+
+      return field
+        ? `${field.tab} – ${field.label}: ${error.message}`
+        : error.message;
+    })
+    .join("\n");
 
   function handleCreate() {
     createMemberMutation.reset();
@@ -93,16 +170,20 @@ export default function CreateMemberPage() {
 
       <header style={headerStyle}>
         <h1 style={{ marginBottom: "0.25rem", fontSize: "1.8rem" }}>
-          Neues Mitglied anlegen
+          Mitglied anlegen
         </h1>
 
         <p style={{ margin: 0, color: "#555" }}>
           Die Eingaben werden automatisch übernommen. Zum Abschluss unten auf
-          „Mitglied anlegen“ klicken.
+          „Speichern“ klicken.
         </p>
       </header>
 
-      <MemberTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <MemberTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        disabledTabs={["ehrungen", "datenschutz", "chorkleidung"]}
+      />
 
       {showGlobalCreateError && (
         <ErrorBox message={createMemberMutation.error.message} />
@@ -118,7 +199,10 @@ export default function CreateMemberPage() {
           form={
             <MemberStammdatenForm
               stammdaten={stammdaten}
+              createMode={true}
+              stammdatenBearbeitet={stammdatenBearbeitet}
               onChange={setStammdaten}
+              onFormValuesChange={handleStammdatenChange}
               serverError={createMemberMutation.error}
               onClearServerError={() => createMemberMutation.reset()}
             />
@@ -136,7 +220,9 @@ export default function CreateMemberPage() {
           form={
             <MemberContactForm
               kontakt={kontakt}
+              createMode={true}
               onChange={setKontakt}
+              onFormValuesChange={setKontakt}
               serverError={createMemberMutation.error}
               onClearServerError={() => createMemberMutation.reset()}
             />
@@ -156,7 +242,9 @@ export default function CreateMemberPage() {
               mitgliedschaft={mitgliedschaft}
               statuses={statuses}
               voices={voices}
+              createMode={true}
               onChange={setMitgliedschaft}
+              onFormValuesChange={setMitgliedschaft}
               serverError={createMemberMutation.error}
               onClearServerError={() => createMemberMutation.reset()}
             />
@@ -165,15 +253,13 @@ export default function CreateMemberPage() {
       )}
 
       <section style={actionCardStyle}>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={!canCreate || createMemberMutation.isPending}
-          >
-            {createMemberMutation.isPending ? "Lege an..." : "Mitglied anlegen"}
-          </button>
-
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "0.5rem",
+          }}
+        >
           <button
             type="button"
             className="secondary"
@@ -181,15 +267,21 @@ export default function CreateMemberPage() {
           >
             Abbrechen
           </button>
-        </div>
 
-        {!canCreate && (
-          <p style={hintStyle}>
-            {isFirma
-              ? "Bitte mindestens den Firmennamen eingeben."
-              : "Bitte Vorname und Nachname eingeben."}
-          </p>
-        )}
+          <span
+            title={!canCreate ? saveTooltip : ""}
+            style={{ display: "inline-flex" }}
+          >
+            <button
+              type="button"
+              className="primary"
+              onClick={handleCreate}
+              disabled={!canCreate || createMemberMutation.isPending}
+            >
+              {createMemberMutation.isPending ? "Speichert..." : "Speichern"}
+            </button>
+          </span>
+        </div>
       </section>
     </main>
   );
@@ -250,11 +342,4 @@ const actionCardStyle = {
   padding: "1.25rem",
   marginBottom: "1rem",
   boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)",
-};
-
-const hintStyle = {
-  marginBottom: 0,
-  marginTop: "0.75rem",
-  color: "#666",
-  fontSize: "0.9rem",
 };

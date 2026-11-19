@@ -32,7 +32,6 @@ a:hover {
   text-decoration: underline;
 }
 
-
 /* =========================================================
    2. Forms / Inputs
    ========================================================= */
@@ -60,7 +59,6 @@ textarea:focus {
   border-color: #1f5fbf;
 }
 
-
 /* =========================================================
    3. Buttons
    ========================================================= */
@@ -72,7 +70,9 @@ button {
   font-size: 0.95rem;
   border: 1px solid #ccc;
   background-color: #ffffff;
-  transition: background-color 0.15s, border-color 0.15s;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s;
 }
 
 button:hover {
@@ -91,8 +91,31 @@ button[type="submit"] {
   font-weight: 500;
 }
 
+button.primary {
+  background-color: #1f5fbf;
+  color: white;
+  border-color: #1f5fbf;
+  font-weight: 500;
+}
+
+button.primary:hover {
+  background-color: #174a96;
+}
+
 button[type="submit"]:hover {
   background-color: #174a96;
+}
+
+button:disabled {
+  background-color: #ffffff;
+  color: #999999;
+  border-color: #cccccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+button:disabled:hover {
+  background-color: #ffffff;
 }
 
 /* Secondary Button */
@@ -116,7 +139,6 @@ button.danger {
 button.danger:hover {
   background-color: #8f001a;
 }
-
 
 /* =========================================================
    4. Member List / Cards
@@ -162,7 +184,6 @@ button.danger:hover {
   outline-offset: 2px;
 }
 
-
 /* =========================================================
    5. Badges
    ========================================================= */
@@ -204,7 +225,6 @@ button.danger:hover {
   color: #777;
 }
 
-
 /* =========================================================
    6. Messages / Errors
    ========================================================= */
@@ -223,7 +243,6 @@ button.danger:hover {
   font-weight: 500;
 }
 
-
 /* =========================================================
    7. Form Actions
    ========================================================= */
@@ -233,7 +252,6 @@ button.danger:hover {
   display: flex;
   gap: 0.5rem;
 }
-
 
 /* =========================================================
    8. Dialog / Unsaved Changes
@@ -266,7 +284,6 @@ button.danger:hover {
   gap: 12px;
   margin-top: 20px;
 }
-
 
 /* =========================================================
    9. Responsive / Mobile

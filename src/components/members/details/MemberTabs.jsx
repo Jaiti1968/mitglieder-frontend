@@ -6,28 +6,47 @@ const tabs = [
   { id: "chorkleidung", label: "Chorkleidung" },
 ];
 
-export default function MemberTabs({ activeTab, onTabChange }) {
+export default function MemberTabs({
+  activeTab,
+  onTabChange,
+  disabledTabs = [],
+}) {
   return (
     <nav style={tabsStyle}>
-      {tabs.map((tab) => (
-        <TabButton
-          key={tab.id}
-          active={activeTab === tab.id}
-          onClick={() => onTabChange(tab.id)}
-        >
-          {tab.label}
-        </TabButton>
-      ))}
+      {tabs.map((tab) => {
+        const disabled = disabledTabs.includes(tab.id);
+
+        return (
+          <TabButton
+            key={tab.id}
+            active={activeTab === tab.id}
+            disabled={disabled}
+            onClick={() => onTabChange(tab.id)}
+          >
+            {tab.label}
+          </TabButton>
+        );
+      })}
     </nav>
   );
 }
 
-function TabButton({ active, onClick, children }) {
+function TabButton({ active, disabled, onClick, children }) {
   return (
     <button
       type="button"
+      disabled={disabled}
       onClick={onClick}
-      style={active ? activeTabButtonStyle : tabButtonStyle}
+      title={
+        disabled ? "Erst nach dem Anlegen des Mitglieds verfügbar" : undefined
+      }
+      style={
+        disabled
+          ? { ...tabButtonStyle, opacity: 0.5, cursor: "not-allowed" }
+          : active
+            ? activeTabButtonStyle
+            : tabButtonStyle
+      }
     >
       {children}
     </button>

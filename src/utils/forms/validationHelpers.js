@@ -41,9 +41,22 @@ export function validatePostalCode(validationErrors, field, value, message) {
   }
 }
 
+function hasCompleteGermanDateFormat(value) {
+  return /^\d{2}\.\d{2}\.\d{4}$/.test(String(value ?? "").trim());
+}
+
 export function validateCompleteDate(validationErrors, field, value, message) {
-  if (value && !isCompleteDate(value)) {
+  if (!value) return;
+
+  if (!hasCompleteGermanDateFormat(value)) {
     validationErrors.push(createValidationError(field, message));
+    return;
+  }
+
+  if (!isCompleteDate(value)) {
+    validationErrors.push(
+      createValidationError(field, "Bitte ein gültiges Datum eingeben"),
+    );
   }
 }
 
