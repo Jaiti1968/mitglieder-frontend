@@ -16,12 +16,19 @@ export default function DateField({ name, control, label, error, ...props }) {
           error={error}
           value={field.value ?? ""}
           onChange={(event) => {
-            const value = event.target.value;
-            const normalizedValue = normalizeGermanDateInput(value);
-
-            field.onChange(normalizedValue);
+            field.onChange(event.target.value);
           }}
-          onBlur={field.onBlur}
+          onBlur={(event) => {
+            const normalizedValue = normalizeGermanDateInput(
+              event.target.value,
+            );
+
+            if (normalizedValue !== event.target.value) {
+              field.onChange(normalizedValue);
+            }
+
+            field.onBlur();
+          }}
           name={field.name}
           ref={field.ref}
         />

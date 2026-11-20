@@ -1,10 +1,8 @@
 # EMC Mitgliederverwaltung – Frontend Developer Guide
 
-**Dokumentstand:** 17.11.2026
+**Dokumentstand:** 20.11.2026
 
-**Geprüfte Codebasis:** `mitglieder-frontend(3).zip` (Version `1.2.3` laut dortiger `package.json`)
-
-**Hinweis zur Weiterentwicklung:** Auf dem neuen Branch `feature/BL-009-ehrungen` wurde die Paketversion inzwischen auf `1.3.0-SNAPSHOT` gesetzt. Die hier beschriebenen vorhandenen Funktionen entsprechen weiterhin dem geprüften Stand `1.2.3`; die Frontend-Implementierung von BL-009 steht noch aus.
+**Dokumentierter Entwicklungsstand:** `1.3.0-SNAPSHOT` auf `feature/BL-009-ehrungen` (BL-009 lokal implementiert und getestet; Bereitstellung auf DEV/PROD noch offen). Die frühere vollständige Codebasisprüfung bezog sich auf `mitglieder-frontend(3).zip` (`1.2.3`); BL-009 wird anhand der umgesetzten Komponenten und der durchgeführten Tests ergänzt.
 
 ## 1. Zweck und Dokumentationsgrenzen
 
@@ -99,17 +97,18 @@ Rollen: `ADMIN`, `EDITOR`, `VIEWER`. `ADMIN` kann die Benutzerverwaltung nutzen;
 
 Die zentralen API-Module befinden sich in `src/api/`:
 
-- `apiClient.js`: `apiGet`, `apiPost`, `apiPut`, gemeinsames Response- und Fehlermanagement.
+- `apiClient.js`: `apiGet`, `apiPost`, `apiPut`, `apiDelete`, gemeinsames Response- und Fehlermanagement.
 - `memberApi.js`: Mitgliederdaten.
 - `lookupApi.js`: Nachschlagewerte.
 - `adminUserApi.js`: Benutzerverwaltung.
 - `reportingApi.js`: Berichtsaufrufe.
+- `honorApi.js`: Ehrungen eines Mitglieds lesen, anlegen, bearbeiten und löschen (BL-009).
 
 `authApi.js` liegt im Ordner `src/auth/` und ist daher **nicht** Teil von `src/api/`.
 
 Der gemeinsame Client sendet Requests mit `credentials: "include"`. Bei `204 No Content` liefert er `null`. Bei Fehlerantworten stellt er unter anderem `status`, `requestId` und `validationErrors` bereit; bei `401` erfolgt eine Weiterleitung auf `/login`.
 
-**Aktuelle Grenze:** Eine allgemeine Funktion `apiDelete` ist im geprüften Stand noch nicht vorhanden. Sie wird für BL-009 benötigt.
+Für BL-009 wird auch die gemeinsame DELETE-Unterstützung der API-Schicht genutzt. Die Ehrungsendpunkte sind mitgliedsbezogen; die verbindliche Prüfung von Berechtigungen und fachlichen Regeln erfolgt im Backend.
 
 API-Aufrufe fachlicher Komponenten sollen grundsätzlich über die API-Schicht laufen. Der technische Abruf von `/api/system/info` ist aktuell im Hook `useSystemInfo.js` implementiert und bildet eine bestehende Ausnahme.
 
@@ -121,17 +120,18 @@ Serverdaten nicht zusätzlich ohne konkreten Grund in einem globalen lokalen Zus
 
 ## 8. Mitgliederansicht und Formulare
 
-Die Mitgliederdetails werden durch `src/pages/MemberDetailPage.jsx` koordiniert. `MemberTabs.jsx` enthält im geprüften Stand fünf Bereiche:
+Die Mitgliederdetails werden durch `src/pages/MemberDetailPage.jsx` koordiniert. `MemberTabs.jsx` enthält im aktuellen Entwicklungsstand sechs Bereiche:
 
 1. Stammdaten
 2. Kontakt
 3. Mitgliedschaft
 4. Datenschutz
 5. Chorkleidung
+6. Ehrungen (BL-009)
 
 Die Formulare liegen unter `src/components/members/details/`. Gemeinsame Eingabekomponenten (`FormField`, `SelectField`, `CheckboxField`, `DateField`) liegen unter `src/components/forms/`.
 
-`src/utils/forms/` enthält Validierungsfunktionen, Payload-Erzeugung, Standardwerte und Datumshelfer. Neue Formulare sollten diese Trennung beibehalten. Das Backend bleibt für die verbindliche fachliche Validierung zuständig; die Frontend-Validierung dient zusätzlich einer verständlichen Eingabeführung.
+`src/utils/forms/` enthält Validierungsfunktionen, Payload-Erzeugung, Standardwerte und Datumshelfer. Neue Formulare sollten diese Trennung beibehalten. Das Backend bleibt für die verbindliche fachliche Validierung zuständig; die Frontend-Validierung dient zusätzlich einer verständlichen Eingabeführung. Für Ehrungen liegen die fachliche Prüfung und Payload-Erzeugung insbesondere in `honorValidator` und `honorPayload`.
 
 ## 9. AutoSave und Schutz vor Datenverlust
 
@@ -145,7 +145,16 @@ Ergänzende Bausteine:
 
 **Technische Einschränkungen des geprüften Stands:** Die vorhandene AutoSave-Logik verhindert nicht grundsätzlich parallele bereits gestartete Requests. Änderungen während der Debounce-Wartezeit werden durch den Status-Hook allein nicht vollständig als ausstehend erfasst. Beim Schließen eines einzelnen Bearbeitungsdialogs ist deshalb eine gesonderte Absicherung erforderlich.
 
-Für neue Dialoge ist vor der Wiederverwendung des Hooks zu prüfen, ob laufende Requests, fehlgeschlagene Speicherungen und das Schließen des Dialogs korrekt behandelt werden. Die bestehenden Mitgliedsformulare werden im Rahmen von BL-009 nicht pauschal umgebaut.
+Für neue Dialoge ist vor der Wiederverwendung des Hooks zu prüfen, ob laufende Requests, fehlgeschlagene Speicherungen und das Schließen des Dialogs korrekt behandelt werden. Die bestehenden Mitgliedsformulare wurden im Rahmen von BL-009 nicht pauschal umgebaut.
+
+### 9.1 Ehrungsdialoge (BL-009)
+
+- **Neuanlage:** `MemberHonorCreateDialog` speichert erst nach ausdrücklichem Klick auf „Speichern“. Die Ehrungsart ist Pflicht; das Datum darf leer bleiben. Abbrechen verwirft die Eingaben.
+- **Bearbeitung:** `MemberHonorEditDialog` speichert gültige Änderungen nach einer Verzögerung von 500 ms automatisch. Bereits erfolgreich gespeicherte Änderungen bleiben auch beim Schließen erhalten. Bei einem Speicherfehler ist ein erneuter Versuch möglich; nicht gespeicherte Änderungen werden vor dem Verwerfen durch einen Bestätigungsdialog abgesichert.
+- **Löschen:** Vor der Löschung erscheint ein Bestätigungsdialog. Ein fehlgeschlagener Löschversuch lässt den Bearbeitungsdialog geöffnet und kann wiederholt werden.
+- **Gemeinsame Dialoge:** `DeleteConfirmationDialog` und `DiscardChangesDialog` unter `src/components/common/` werden für die jeweiligen Bestätigungen verwendet.
+
+Die Ehrungsliste wird durch `MemberHonorsSection` geladen. React Query invalidiert nach erfolgreichen Mutationen die mitgliedsbezogene Ehrungsabfrage, damit die Ansicht aktualisiert wird.
 
 ## 10. Systeminformationen und Laufzeitumgebung
 
@@ -172,7 +181,7 @@ Die Implementierung verteilt sich auf `src/pages/`, `src/components/reporting/` 
 
 ## 12. Automatisierte Tests
 
-Die Frontend-Tests verwenden Vitest und konzentrieren sich im geprüften Stand auf Formularvalidierung und Hilfsfunktionen, insbesondere `validationHelpers`, `dateHelpers` sowie die Validatoren für Stammdaten, Mitgliedschaft, Kontakt, Datenschutz und Chorkleidung.
+Die Frontend-Tests verwenden Vitest. Neben Formularvalidierung und Hilfsfunktionen (`validationHelpers`, `dateHelpers` und die bisherigen Fachvalidatoren) sind für BL-009 Tests der Ehrungsvalidierung, Payload-Erzeugung, Dialogzustände und API-Mutationsanbindung hinzugekommen. `MemberHonorsSection.test.jsx` prüft außerdem die Anzeige des Hinweises „Zukünftiger Termin“ für zukünftige, heutige, vergangene und fehlende Ehrungsdaten.
 
 ```bash
 npm run test:run
@@ -180,7 +189,7 @@ npm run lint
 npm run build
 ```
 
-Eine feste Anzahl erfolgreicher Tests wird nicht dokumentiert: Der jeweils aktuelle Testlauf ist maßgeblich. Für neue Funktionen sind geeignete Tests der fachlichen Logik und, soweit erforderlich, der API-Interaktion und Dialogzustände zu ergänzen.
+**Letzter bestätigter vollständiger Frontend-Testlauf (20.11.2026): 14 Testdateien, 110 Tests bestanden, 0 fehlgeschlagen.** Dies ist ein dokumentiertes Prüfergebnis und keine dauerhaft garantierte Testanzahl. Für neue Funktionen sind geeignete Tests der fachlichen Logik und, soweit erforderlich, der API-Interaktion und Dialogzustände zu ergänzen.
 
 ## 13. Entwicklungsworkflow und Versionierung
 
@@ -190,9 +199,9 @@ Die Version wird in `package.json` geführt und von Vite zur Build-Zeit eingebet
 
 Aktueller Kontext:
 
-- Geprüfter und dokumentierter Funktionsstand: `1.2.3`.
-- Neuer Entwicklungsbranch für BL-009: `feature/BL-009-ehrungen`, Paketversion `1.3.0-SNAPSHOT`.
-- Die README-Dateien werden nach Implementierung und Prüfung der Ehrungen erneut auf den dann erreichten Funktionsstand gebracht.
+- Frühere vollständige Codebasisprüfung: `1.2.3`.
+- Aktueller BL-009-Entwicklungsstand: `feature/BL-009-ehrungen`, Paketversion `1.3.0-SNAPSHOT`.
+- BL-009 ist implementiert und lokal getestet; Commit, Merge und Deployment sind gesondert durchzuführen.
 
 ## 14. Docker und Betrieb
 
@@ -200,12 +209,29 @@ Das Repository enthält Docker- und NGINX-Konfigurationen für die Frontend-Bere
 
 In diesem Dokument werden bewusst keine möglicherweise veralteten Image-Build- oder Portainer-Anweisungen dupliziert.
 
-## 15. Abgrenzung und nächste Entwicklung
+## 15. BL-009 Ehrungen – Implementierung und Abgrenzung
 
-**BL-009 Ehrungen ist im geprüften Frontend noch nicht implementiert.** Für die anstehende Umsetzung gelten das freigegebene `BL-009-frontend-konzept-v0.1.md` und die Anforderungen `BL-009-ehrungen-v0.2.md` in EMC-DOKUMENTATION.
+BL-009 ist im aktuellen Frontend-Entwicklungsstand umgesetzt. Der Ehrungsbereich ist in die Mitgliederdetails integriert und verwendet die bestehende mitgliedsbezogene Navigation; eine eigenständige Route ist nicht erforderlich.
 
-Vorgesehen sind ein Ehrungsreiter, die Ehrungsliste, ein Anlegedialog mit explizitem Speichern, ein Bearbeitungsdialog mit abgesichertem AutoSave und eine bestätigungspflichtige Löschfunktion. Die Sortierung liefert das Backend. Bei Ehrungen ist dieselbe Ehrungsart pro Mitglied nur einmal zulässig; für BL-010 Funktionen gelten andere fachliche Regeln.
+### 15.1 Komponenten und Datenfluss
 
-BL-010 Funktionen und BL-011 Verteiler sind ebenfalls **keine vorhandenen Frontend-Funktionen** dieses dokumentierten Stands. Gemeinsame UI-Bausteine können später wiederverwendet werden, die fachlichen Prüfungen bleiben getrennt.
+- `src/api/honorApi.js` kapselt die REST-Aufrufe für die Ehrungszuordnungen eines Mitglieds.
+- `MemberHonorsSection.jsx` lädt die Zuordnungen mit React Query und zeigt Ehrungsart und Verleihungsdatum an. Sie öffnet die Anlage- und Bearbeitungsdialoge und stößt die Mutationen an.
+- `MemberHonorCreateDialog.jsx` und `MemberHonorEditDialog.jsx` behandeln Neuanlage und Bearbeitung mit unterschiedlichem Speicherverhalten (siehe Abschnitt 9.1).
+- `honorValidator` und `honorPayload` bilden Frontend-Prüfungen und API-Nutzdaten ab. Die verbindlichen Regeln prüft das Backend.
+
+Die Anzeige folgt der vom Backend gelieferten Reihenfolge: Ehrungsdatum absteigend, bei gleichem Datum Ehrungsart-ID aufsteigend, fehlende Daten zuletzt. Für Ehrungsdaten nach dem aktuellen Tag erscheint „Zukünftiger Termin“. Der Hinweis ist nicht persistiert; eine automatische Aktualisierung um Mitternacht ohne Neuladen ist nicht erforderlich.
+
+### 15.2 Fachliche Regeln und Zugriff
+
+Eine Ehrungsart darf pro Mitglied nur einmal zugeordnet sein. Das Ehrungsdatum ist optional und darf auch in der Zukunft liegen. Eine bestehende Zuordnung kann geändert oder nach Bestätigung gelöscht werden. `ADMIN` und `EDITOR` erhalten Schreibaktionen, `VIEWER` eine reine Leseansicht. Die Rollenprüfung wird zusätzlich im Backend erzwungen.
+
+Während der Übergangsphase nutzen Access und Webanwendung dieselben Ehrungsdaten. Die Kompatibilität wurde in beide Richtungen praktisch geprüft; für BL-009 wurden keine Datenbankschemaänderungen vorgenommen.
+
+### 15.3 Offene Arbeiten
+
+Die Implementierung und die lokale fachliche Abnahme sind abgeschlossen. Commit und Merge sowie die kontrollierte Bereitstellung auf DEV und später PROD stehen noch aus. Details und Abnahmeergebnisse stehen im BL-009-Ergebnisdokument in **EMC-DOKUMENTATION**.
+
+BL-010 Funktionen und BL-011 Verteiler sind **nicht** Teil der BL-009-Implementierung. Gemeinsame UI-Bausteine können später wiederverwendet werden, die fachlichen Regeln bleiben getrennt; insbesondere darf die Eindeutigkeitsregel für Ehrungen nicht auf Funktionen übertragen werden.
 
 Weitere technische Erweiterungen und ihre Priorisierung werden in EMC-DOKUMENTATION geführt und nicht durch diese README neu beschlossen.

@@ -68,3 +68,8 @@ export async function apiPut(path, body) {
   const response = await fetch(path, createRequestOptions("PUT", body));
   return handleResponse(response);
 }
+
+export async function apiDelete(path) {
+  const response = await fetch(path, createRequestOptions("DELETE"));
+  return handleResponse(response);
+}

@@ -184,6 +184,49 @@ button.danger:hover {
   outline-offset: 2px;
 }
 
+/* Ehrungen: Kartenlayout */
+
+.honor-list {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 750px;
+}
+
+.honor-card {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+}
+
+.honor-card-name {
+  font-weight: 600;
+}
+
+.honor-card-date {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-left: auto;
+  color: #666;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.honor-card-date-value {
+  text-align: right;
+}
+
+@media (max-width: 550px) {
+  .honor-card {
+    flex-wrap: wrap;
+  }
+
+  .honor-card-date {
+    white-space: normal;
+  }
+}
+
 /* =========================================================
    5. Badges
    ========================================================= */
