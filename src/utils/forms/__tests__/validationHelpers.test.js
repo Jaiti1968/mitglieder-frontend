@@ -170,6 +170,24 @@ describe("validationHelpers", () => {
       expect(errors).toEqual([]);
     });
 
+    it("adds a different error for an invalid calendar date", () => {
+      const errors = [];
+
+      validateCompleteDate(
+        errors,
+        "geburtsdatum",
+        "31.02.2026",
+        "Datum muss vollständig im Format TT.MM.JJJJ sein",
+      );
+
+      expect(errors).toEqual([
+        {
+          field: "geburtsdatum",
+          message: "Bitte ein gültiges Datum eingeben",
+        },
+      ]);
+    });
+
     it("does not add an error when date is empty", () => {
       const errors = [];
 

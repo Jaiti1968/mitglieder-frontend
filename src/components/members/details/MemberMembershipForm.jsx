@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useRef } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import CheckboxField from "../../forms/CheckboxField";
 import DateField from "../../forms/DateField";
 import SelectField from "../../forms/SelectField";
@@ -14,6 +14,8 @@ export default function MemberMembershipForm({
   voices = [],
   readOnly = false,
   onChange,
+  createMode = false,
+  onFormValuesChange,
   onAutoSaveStart,
   onAutoSaveSuccess,
   onAutoSaveError,
@@ -30,15 +32,55 @@ export default function MemberMembershipForm({
     formState: { errors, isDirty },
   } = useForm({
     mode: "onChange",
-    defaultValues: createMitgliedschaftDefaults(),
+    defaultValues: createMitgliedschaftDefaults(mitgliedschaft),
   });
 
+  const values = useWatch({ control });
+
+  const lastTransferredValues = useRef(
+    JSON.stringify(createMitgliedschaftDefaults(mitgliedschaft)),
+  );
+
   useEffect(() => {
+    if (!createMode || !onFormValuesChange) return;
+
+    const currentValues = JSON.stringify(values);
+
+    if (currentValues === lastTransferredValues.current) return;
+
+    lastTransferredValues.current = currentValues;
+
+    onFormValuesChange(values);
+  }, [createMode, values, onFormValuesChange]);
+
+  useEffect(() => {
+    if (!createMode) return;
+
+    const timeoutId = setTimeout(() => {
+      const validationErrors = validateMitgliedschaft(values);
+
+      clearErrors();
+
+      validationErrors.forEach(({ field, message }) => {
+        setError(field, {
+          type: "client",
+          message,
+        });
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [createMode, values, clearErrors, setError]);
+
+  useEffect(() => {
+    if (createMode) return;
+
     reset(createMitgliedschaftDefaults(mitgliedschaft));
-  }, [mitgliedschaft, reset]);
+  }, [createMode, mitgliedschaft, reset]);
 
   useAutoSaveForm({
     enabled: !readOnly,
+    shouldAutoSave: () => !createMode,
     control,
     isDirty,
     setError,

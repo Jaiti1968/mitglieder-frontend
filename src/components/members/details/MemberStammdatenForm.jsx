@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import DateField from "../../forms/DateField";
 import FormField from "../../forms/FormField";
@@ -12,6 +12,9 @@ export default function MemberStammdatenForm({
   stammdaten = {},
   readOnly = false,
   onChange,
+  createMode = false,
+  stammdatenBearbeitet = false,
+  onFormValuesChange,
   onAutoSaveStart,
   onAutoSaveSuccess,
   onAutoSaveError,
@@ -29,18 +32,71 @@ export default function MemberStammdatenForm({
     formState: { errors, isDirty },
   } = useForm({
     mode: "onChange",
-    defaultValues: createStammdatenDefaults(),
+    defaultValues: createStammdatenDefaults(stammdaten),
   });
 
   const values = useWatch({ control });
   const isFirma = values?.personFirma === true;
 
+  const hasBeenEdited = useRef(false);
+
+  const lastTransferredValues = useRef(
+    JSON.stringify(createStammdatenDefaults(stammdaten)),
+  );
+
+  if (createMode && isDirty) {
+    hasBeenEdited.current = true;
+  }
+
   useEffect(() => {
+    if (!createMode || !onFormValuesChange) return;
+
+    const currentValues = JSON.stringify(values);
+
+    if (currentValues === lastTransferredValues.current) return;
+
+    lastTransferredValues.current = currentValues;
+    hasBeenEdited.current = true;
+
+    onFormValuesChange(values);
+  }, [createMode, values, onFormValuesChange]);
+
+  useEffect(() => {
+    if (!createMode || (!hasBeenEdited.current && !stammdatenBearbeitet))
+      return;
+
+    const timeoutId = setTimeout(() => {
+      const validationErrors = validateStammdaten(values);
+
+      clearErrors();
+
+      validationErrors.forEach(({ field, message }) => {
+        setError(field, {
+          type: "client",
+          message,
+        });
+      });
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    createMode,
+    isDirty,
+    values,
+    stammdatenBearbeitet,
+    clearErrors,
+    setError,
+  ]);
+
+  useEffect(() => {
+    if (createMode) return;
+
     reset(createStammdatenDefaults(stammdaten));
-  }, [stammdaten, reset]);
+  }, [createMode, stammdaten, reset]);
 
   useAutoSaveForm({
     enabled: !readOnly,
+    shouldAutoSave: () => !createMode,
     control,
     isDirty,
     setError,
@@ -162,6 +218,7 @@ export default function MemberStammdatenForm({
 
       <FormField
         label={isFirma ? "Firmenzusatz" : "Vorname"}
+        required={!isFirma}
         error={errors.vorname?.message}
         disabled={readOnly}
         {...register("vorname")}

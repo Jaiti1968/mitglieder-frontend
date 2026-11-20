@@ -1,867 +1,161 @@
 # EMC Mitgliederverwaltung – Frontend
 
-## Überblick
+**Stand der Dokumentation:** 20.11.2026
 
-React-Frontend für die EMC Mitgliederverwaltung.
+**Grundlage:** bisher geprüfte Codebasis und abgeschlossene BL-009-Umsetzung mit erfolgreichen Tests vom 20.11.2026
 
-Die Anwendung stellt die Benutzeroberfläche für die Mitgliederverwaltung bereit und kommuniziert mit dem Spring Boot Backend über eine REST-API.
+**Version laut letztem Testlauf (`npm run test:run`):** `1.3.0-SNAPSHOT`
 
-Funktionale Schwerpunkte:
+## Zweck und Projektstand
 
-- Mitgliederliste mit Suche, Filter und Pagination
-- Detailansicht für Mitglieder
-- AutoSave in Detailformularen
-- Session-basierte Benutzeranmeldung
-- rollenbasierte UI
-- Admin Benutzerverwaltung
-- Anzeige von Frontend- und Backend-Version- Reporting
-  - Mitgliederverzeichnis
-  - Geburtstagsliste
-- Admin Benutzerverwaltung
+Dieses Repository enthält die webbasierte Benutzeroberfläche der EMC Mitgliederverwaltung für den Erfurter Männerchor 1890 e. V. Das Frontend basiert auf React und Vite und greift über eine REST-API auf das Java-/Spring-Boot-Backend zu.
 
-Aktueller Stand:
+Im vorliegenden Code umgesetzt:
 
-**Reporting Phase 3 abgeschlossen**
+- Anmeldung und Abmeldung mit serverseitiger Session sowie Wiederherstellung der Anmeldung beim Start
+- Mitgliederliste mit Suche, Filtern und Seitennavigation
+- Mitgliedsneuanlage und Mitgliederdetailansicht mit den Bereichen Stammdaten, Kontakt, Mitgliedschaft, Datenschutz, Chorkleidung und Ehrungen
+- Automatisches Speichern in den vorhandenen Detailformularen; bei Ehrungen ausdrücklich bestätigte Neuanlage und AutoSave beim Bearbeiten
+- Rollenabhängige Bedienung (`ADMIN`, `EDITOR`, `VIEWER`) und administrative Benutzerverwaltung
+- Reporting: Mitgliederverzeichnis mit PDF- und Excel-Export sowie Geburtstagsliste mit PDF-Export
+- Kennzeichnung der Laufzeitumgebung und Dialog mit technischen Systeminformationen
 
-Umgesetzt:
+**Abgrenzung:** BL-009 Ehrungen ist im Frontend und Backend implementiert und lokal geprüft; Commit, Merge und kontrolliertes Deployment stehen noch aus. BL-010 Funktionen und BL-011 Verteiler sind nicht Bestandteil dieses Stands. Die Pflege der Ehrungsarten selbst erfolgt weiterhin außerhalb der Weboberfläche. Weitere geplante Funktionen sind in EMC-DOKUMENTATION beschrieben.
 
-- Authentifizierung und Rollenmodell
-- Mitgliederverwaltung
-- Benutzerverwaltung
-- Reporting
-  - Mitgliederverzeichnis
-  - Geburtstagsliste
-- PDF-Export
-- Versionserkennung
+## Technologie
 
----
+- React 19, JavaScript, Vite 6
+- React Router 7
+- TanStack React Query 5
+- React Hook Form 7
+- Vitest für automatisierte Tests
+- Docker/NGINX für die containerisierte Bereitstellung
 
-## Technologien
+Die verbindlichen Abhängigkeitsversionen stehen in `package.json` und `package-lock.json`.
 
-- React 19
-- Vite
-- React Router
-- TanStack React Query
-- React Hook Form
-- Vitest
-- JavaScript
-- Docker
+## Schnellstart für die lokale Entwicklung
 
----
-
-## Architektur
-
-Grundstruktur:
-
-```text
-Pages
-→ Feature Components
-→ Shared Form Components
-→ Hooks
-→ API Layer
-→ Spring Boot Backend
-```
-
----
-
-## Projektstruktur
-
-```text
-src
-├── api
-├── auth
-├── components
-│   ├── common
-│   ├── forms
-│   ├── layouts
-│   ├── members
-│   └── reporting
-├── hooks
-│   ├── forms
-│   └── useMemberLookups.js
-├── pages
-├── routes
-├── utils
-│   └── forms
-└── tests
-```
-
----
-
-## Kernkonzepte
-
-## Session-basierte Authentifizierung
-
-Das Frontend verwendet Session-basierte Authentifizierung.
-
-Kein JWT.
-
-Kein dauerhafter Login-State im Browser.
-
-Ablauf:
-
-1. Login gegen Backend
-
-```http
-POST /api/auth/login
-```
-
-2. Session-Cookie wird vom Browser verwaltet
-
-3. Session Restore beim App-Start:
-
-```http
-GET /api/auth/me
-```
-
-4. Logout:
-
-```http
-POST /api/auth/logout
-```
-
----
-
-## Rollenmodell
-
-Unterstützte Rollen:
-
-- `ADMIN`
-- `EDITOR`
-- `VIEWER`
-
----
-
-### Rollenverhalten
-
-#### ADMIN
-
-Vollzugriff:
-
-- Mitglieder lesen
-- Mitglieder anlegen
-- Mitglieder bearbeiten
-- Mitglieder löschen
-- Benutzerverwaltung
-
----
-
-#### EDITOR
-
-Eingeschränkter Schreibzugriff:
-
-- Mitglieder lesen
-- Mitglieder anlegen
-- Mitglieder bearbeiten
-
-Kein:
-
-- Löschen
-- Benutzerverwaltung
-
----
-
-#### VIEWER
-
-ReadOnly:
-
-- Mitglieder lesen
-- Detailansicht lesen
-
-Kein:
-
-- Bearbeiten
-- Anlegen
-- Löschen
-- Benutzerverwaltung
-
----
-
-## Routing
-
-Aktuelle Routen:
-
-```text
-/login
-/members
-/members/new
-/members/:mitgliedsnummer
-/admin/users
-/reporting
-/reporting/members-directory
-/reporting/birthday-list
-```
-
----
-
-## Seiten
-
-## LoginPage
-
-Benutzeranmeldung.
-
-Funktionen:
-
-- Login
-- Fehleranzeige
-- Session Aufbau
-
----
-
-## MembersPage
-
-Mitgliederübersicht.
-
-Funktionen:
-
-- Suche
-- Filter Mitgliederstatus
-- Filter Stimme
-- Pagination
-- Link zur Detailansicht
-- Neuanlage (rollenabhängig)
-
----
-
-## MemberDetailPage
-
-Detailansicht eines Mitglieds.
-
-Tabs:
-
-- Stammdaten
-- Kontakt
-- Mitgliedschaft
-- Datenschutz
-- Chorkleidung
-
-Verhalten:
-
-- ADMIN / EDITOR → editierbar
-- VIEWER → ReadOnly
-
----
-
-## CreateMemberPage
-
-Neuanlage.
-
-Bereiche:
-
-- Stammdaten
-- Kontakt
-- Mitgliedschaft
-
----
-
-## AdminUsersPage
-
-Nur für ADMIN.
-
-Funktionen:
-
-- Benutzerliste
-- Benutzer anlegen
-- Rolle ändern
-- aktiv/inaktiv setzen
-- Passwort setzen
-
-Hinweis:
-
-Rollen-/Aktivitätsänderungen wirken nach erneuter Anmeldung des betroffenen Benutzers.
-
----
-
-## ReportingPage
-
-Einstiegspunkt für das Reporting.
-
-Berichte:
-
-- Mitgliederverzeichnis
-- Geburtstagsliste
-
----
-
-## ReportingMembersDirectoryPage
-
-Filterbare Browseransicht des Mitgliederverzeichnisses.
-
-Funktionen:
-
-- Statusfilter
-- Stimmenfilter
-- PDF-Export
-- Excel-Export
-
----
-
-## BirthdayReportView
-
-Browseransicht der Geburtstagsliste.
-
-Funktionen:
-
-- Gruppierung nach Monaten
-- Statusfilter
-- Stimmenfilter
-- Kennzeichnung runder Geburtstage
-- PDF-Export
-
----
-
-## Formulare / AutoSave
-
-Detailformulare speichern automatisch.
-
-Betroffene Formulare:
-
-- MemberStammdatenForm
-- MemberContactForm
-- MemberMembershipForm
-- MemberDatenschutzForm
-- MemberChorkleidungForm
-
----
-
-### Verhalten
-
-Änderung:
-
-```text
-Speichere Änderungen...
-```
-
-Erfolg:
-
-```text
-✔ Gespeichert
-```
-
-Fehler:
-
-- ErrorBox
-- feldbezogene Fehlermeldungen
-
----
-
-## API Layer
-
-Ordner:
-
-```text
-src/api
-```
-
-Aktuell:
-
-- `authApi.js`
-- `memberApi.js`
-- `lookupApi.js`
-- `adminUserApi.js`
-- `reportingApi.js`
-
-Verantwortung:
-
-- HTTP Requests
-- Fehlerbehandlung
-- DTO Mapping falls erforderlich
-
----
-
-## Auth Layer
-
-Ordner:
-
-```text
-src/auth
-```
-
-Komponenten:
-
-- `AuthProvider`
-- `ProtectedRoute`
-- `useAuth`
-
-Verantwortung:
-
-- Session Restore
-- User State
-- Rollenprüfung
-- Logout
-
----
-
-## Form Utilities
-
-Ordner:
-
-```text
-src/utils/forms
-```
-
-Bereiche:
-
-- defaults
-- payloads
-- validators
-- validationHelpers
-- dateHelpers
-
-Ziel:
-
-Zentrale Wiederverwendung von Formularlogik.
-
----
-
-## Gemeinsame Form-Komponenten
-
-Ordner:
-
-```text
-src/components/forms
-```
-
-Komponenten:
-
-- FormField
-- SelectField
-- CheckboxField
-- DateField
-
----
-
-## Testing
-
-Framework:
-
-```text
-Vitest
-```
-
-Aktueller Stand:
-
-```text
-98 erfolgreiche Unit Tests
-```
-
-Abgedeckt:
-
-- validationHelpers
-- dateHelpers
-- stammdatenValidator
-- membershipValidator
-- contactValidator
-- datenschutzValidator
-- chorkleidungValidator
-
-Ziel:
-
-Qualitätssicherung der Formular- und Validierungslogik.
-
----
-
-## Backend Integration
-
-Backend:
-
-Spring Boot REST API
-
-Wichtige Endpunkte:
-
-```http
-POST /api/auth/login
-POST /api/auth/logout
-GET  /api/auth/me
-GET  /api/members
-GET  /api/lookups/*
-GET  /api/admin/users
-GET  /api/system/info
-
-POST /api/reporting/members-directory/query
-POST /api/reporting/members-directory/export/pdf
-POST /api/reporting/members-directory/export/excel
-
-POST /api/reporting/birthday-list/query
-POST /api/reporting/birthday-list/export/pdf
-```
-
----
-
-## Versionsanzeige
-
-Das Frontend zeigt im `EnvironmentBadge` die aktuell laufenden Frontend- und Backend-Versionen an.
-
-Beispiel DEV:
-
-```text
-FE v1.1.2-SNAPSHOT | BE v1.1.2-SNAPSHOT
-```
-
-Beispiel PROD:
-
-```text
-FE v1.1.1 | BE v1.1.2
-```
-
-Zweck:
-
-- Deployment Smoke Tests
-- schnelle Betriebsidentifikation
-- Support / Fehlerdiagnose
-- Erkennung von Frontend-/Backend-Versionsabweichungen
-
-### Frontend-Version
-
-Die Frontend-Version wird zentral in:
-
-```text
-package.json
-```
-
-definiert:
-
-```json
-"version": "1.1.2-SNAPSHOT"
-```
-
-Über Vite wird diese Build-Zeit-Information bereitgestellt:
-
-```javascript
-import.meta.env.VITE_APP_VERSION;
-```
-
-Konfiguration:
-
-```javascript
-// vite.config.js
-"import.meta.env.VITE_APP_VERSION": JSON.stringify(packageJson.version)
-```
-
-Hinweis:
-
-Die Anzeige der Frontend-Version basiert auf der Version in `package.json` zum Zeitpunkt des Builds.
-
-Für Release-Builds muss daher eine Release-Version gesetzt werden:
-
-```json
-"version": "1.1.1"
-```
-
-Für Entwicklungsstände wird die Version als Snapshot geführt:
-
-```json
-"version": "1.1.2-SNAPSHOT"
-```
-
-Nach einem Release-Build wird die Entwicklungsversion wieder auf die nächste Snapshot-Version angehoben.
-
-### Backend-Version
-
-Die Backend-Version wird über den authentifizierten technischen Endpoint geladen:
-
-```http
-GET /api/system/info
-```
-
-Beispiel Response:
-
-```json
-{
-  "backendVersion": "1.1.2"
-}
-```
-
-Da das Backend session-basiert arbeitet, erfolgt der Request mit Browser-Session:
-
-```javascript
-credentials: "include";
-```
-
-### Implementierung
-
-Anzeige erfolgt über:
-
-```text
-src/components/common/EnvironmentBadge.jsx
-```
-
----
-
-## Fehlerbehandlung
-
-Fehlerquellen:
-
-- API Fehler
-- Auth Fehler
-- Validierungsfehler
-- Netzwerkfehler
-
-Anzeige:
-
-- ErrorBox
-- Feldfehler in Formularen
-
-Login Fehler:
-
-```text
-Anmeldung nicht möglich.
-```
-
----
-
-## Build
-
-Development:
+Voraussetzungen sind eine geeignete Node.js-/npm-Installation und ein erreichbares Backend.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Production Build:
+Die lokale Vite-Konfiguration in `vite.config.js` leitet `/api` derzeit an `http://localhost:8080` weiter. Das Backend muss für API-Funktionen erreichbar sein. Der Entwicklungsserver gibt seine lokale Adresse beim Start aus.
+
+Weitere Befehle:
 
 ```bash
-npm run build
+npm run test:run   # Vitest einmalig ausführen
+npm test           # Vitest über das projektspezifische Startskript
+npm run lint       # ESLint
+npm run build      # Produktions-Build in dist/
+npm run preview    # Lokale Vorschau des Builds
 ```
 
-Preview:
+Maßgeblich ist der jeweils aktuelle Testlauf. Am 20.11.2026 bestanden 110 Frontend-Tests in 14 Testdateien. Neben Formularvalidierung und Hilfsfunktionen werden für BL-009 auch Ehrungs-Payloads, Dialogverhalten, AutoSave, Löschfehler und die Kennzeichnung zukünftiger Termine geprüft.
 
-```bash
-npm run preview
-```
+**Hinweis:** Konfigurationswerte, Protokolle und Konsolenausgaben können Zugangsdaten enthalten. Solche Informationen vor einer Weitergabe schwärzen.
 
----
+## Anwendung und Berechtigungen
 
-## Deployment
+Die wichtigsten Routen sind:
 
-Deployment erfolgt containerisiert.
+| Route | Funktion |
+| --- | --- |
+| `/login` | Anmeldung |
+| `/members` | Mitgliederübersicht |
+| `/members/new` | Mitglied anlegen |
+| `/members/:mitgliedsnummer` | Mitgliederdetails |
+| `/admin/users` | Benutzerverwaltung |
+| `/reporting` | Auswahl und Anzeige der verfügbaren Berichte |
+| `/reporting/members-directory` | Mitgliederverzeichnis als eigene Route |
 
-Frontend DEV und PROD werden als versionierte Docker Images betrieben.
+Die Geburtstagsliste wird innerhalb von `/reporting` ausgewählt; für sie ist in `AppRoutes.jsx` keine eigene Route definiert.
 
-Deployment-Artefakte:
+Die Anwendung kennt die Rollen `ADMIN`, `EDITOR` und `VIEWER`. Die Mitgliederbearbeitung ist für `ADMIN` und `EDITOR` vorgesehen; `VIEWER` erhält eine lesende Oberfläche. Benutzerverwaltung und Reporting-Navigation werden nur für `ADMIN` angeboten. Die verbindliche Berechtigungsprüfung erfolgt im Backend, nicht allein über ausgeblendete Bedienelemente.
 
-DEV:
-emc-mitglieder-frontend:X.Y.Z-SNAPSHOT
+## Ehrungen (BL-009)
 
-PROD:
-emc-mitglieder-frontend:X.Y.Z
+In den Mitgliederdetails können `ADMIN` und `EDITOR` Ehrungen anzeigen, anlegen, bearbeiten und nach Bestätigung löschen. `VIEWER` kann Ehrungen ausschließlich ansehen. Die Berechtigungen werden zusätzlich im Backend durchgesetzt.
 
-Vor jedem Release-Build ist die Version in package.json zu prüfen, da die Frontend-Versionsanzeige aus dieser Datei erzeugt wird.
+Bei der **Neuanlage** wird erst mit „Speichern“ übernommen; „Abbrechen“ verwirft die Eingaben. Bei der **Bearbeitung** werden gültige Änderungen nach einer kurzen Verzögerung automatisch gespeichert (AutoSave, 500 ms). Bereits erfolgreich gespeicherte Änderungen bleiben beim Schließen erhalten. Bei einem Speicherfehler kann erneut gespeichert oder das Verwerfen noch nicht gespeicherter Änderungen bestätigt werden.
 
-Docker Desktop muss für den Build-Prozess gestartet sein.
+Das Verleihungsdatum ist optional und darf in der Zukunft liegen. Zukünftige Daten werden mit „Zukünftiger Termin“ gekennzeichnet; am Termintag entfällt der Hinweis. Eine automatische Aktualisierung um Mitternacht ohne erneutes Laden ist nicht vorgesehen. Pro Mitglied darf jede Ehrungsart nur einmal vergeben werden. Die Liste ist nach Verleihungsdatum absteigend sortiert; undatierte Ehrungen stehen zuletzt.
 
-Zielumgebung:
+Access und Webanwendung verwenden während der Übergangsphase dieselben Ehrungsdaten. Die gegenseitige Sichtbarkeit von Änderungen wurde praktisch geprüft. Fachliche Regeln und Abnahme sind in EMC-DOKUMENTATION unter BL-009 festgehalten.
+
+## Aufbau des Quellcodes
 
 ```text
-UGREEN NAS DH2300
+src/
+├── api/                 # API-Client und fachliche API-Funktionen
+├── auth/                # Session, Auth-Kontext und geschützte Routen
+├── components/
+│   ├── common/          # Gemeinsame UI-Bausteine, Systeminformationen
+│   ├── forms/           # Wiederverwendbare Formularfelder
+│   ├── layouts/         # Anwendungsrahmen
+│   ├── members/         # Mitgliederliste und Detailformulare
+│   └── reporting/       # Mitgliederverzeichnis und Geburtstagsliste
+├── hooks/               # Gemeinsame Hooks, darunter AutoSave
+├── pages/               # Seitenkomponenten
+├── routes/              # Routen
+└── utils/forms/         # Validierung, Datums- und Formularhilfen
 ```
 
-Frontend läuft als Docker Container hinter Reverse Proxy / NAS Setup.
+Detaillierte Entwicklungsregeln, Komponenten und API-Konventionen werden in [`README_DEVELOPER.md`](README_DEVELOPER.md) beschrieben. Diese Datei wird separat an den aktuellen Codebestand angepasst.
 
-### Deployment Standard
+## Authentifizierung und API
 
-Frontend DEV und PROD werden image-basiert betrieben.
+Die Anmeldung ist sessionbasiert; der Browser verwendet das vom Backend gesetzte Session-Cookie. Es wird kein JWT-basierter Login verwendet.
 
-Build-Artefakt:
+Wichtige Authentifizierungsendpunkte:
 
-```text
-dist/
+```http
+POST /api/auth/login
+GET  /api/auth/me
+POST /api/auth/logout
 ```
 
-Container Runtime:
+Die fachlichen API-Aufrufe sind unter `src/api/` gekapselt. Der gemeinsame API-Client verwendet `credentials: "include"` und verarbeitet auch leere Antworten mit HTTP 204.
 
-```text
-nginx:alpine
-```
+## Reporting
 
-Deploymentmodell:
+Unter `/reporting` können Administratoren zwischen folgenden Berichten wählen:
 
-```text
-npm run build
-→ dist auf NAS übertragen
-→ Docker Image Build auf NAS
-→ Docker Compose Deployment
-```
+| Bericht | Anzeige und Ausgabe |
+| --- | --- |
+| Mitgliederverzeichnis | Browseransicht, PDF und Excel |
+| Geburtstagsliste | Browseransicht mit Monatsgruppierung und Kennzeichnung runder Geburtstage, PDF |
 
-Die Compose-Dateien sind Bestandteil des Repositories:
+Die Berichte werden über das Backend erzeugt bzw. mit Daten versorgt. Fachliche Regeln und Reporting-Entscheidungen sind in EMC-DOKUMENTATION beschrieben.
 
-```text
-emc-infra
-```
+## Laufzeitumgebung und Versionsinformationen
 
-und bilden die operative Source of Truth.
+Die Kopfzeile zeigt eine Kennzeichnung der vom Backend gemeldeten Umgebung (`LOCAL`, `DEV` oder `PROD`). Über **Info** öffnet sich ein Dialog mit Systeminformationen, darunter Frontend-Version und Build-Zeit sowie Backend-Version und Backend-Build, soweit verfügbar.
 
----
+Die Frontend-Version stammt aus `package.json` und wird beim Build über Vite bereitgestellt (`VITE_APP_VERSION`). Auch die Frontend-Build-Zeit wird beim Build gesetzt (`VITE_APP_BUILD_TIME`). Backend-Informationen werden über die vorhandene Systeminfo-Anbindung geladen.
 
-### Deployment Standard
+**Wichtig:** `1.3.0-SNAPSHOT` ist die Version des zuletzt getesteten lokalen Frontend-Stands. Daraus lässt sich nicht ableiten, welche Version derzeit auf DEV oder PROD installiert ist.
 
-Frontend DEV und PROD werden image-basiert betrieben.
+## Build, Deployment und Betrieb
 
-Deployment-Artefakte:
+Der Produktions-Build wird mit `npm run build` erzeugt. Das Projekt enthält ein `Dockerfile` sowie NGINX-Konfigurationen unter `docker/`.
 
-DEV:
-emc-mitglieder-frontend:X.Y.Z-SNAPSHOT
+DEV und PROD werden nach dem dokumentierten Betriebsstandard als versionierte Container-Images bereitgestellt. Die konkreten Image-Tags, Compose-Konfigurationen, Deploymentschritte und Betriebsanweisungen werden **nicht** in dieser README doppelt gepflegt.
 
-PROD:
-emc-mitglieder-frontend:X.Y.Z
+Maßgeblich sind:
 
-Build-Plattform:
+- **EMC-INFRA:** Infrastruktur, Laufzeitumgebungen, Docker-/Compose-Konfiguration, Deployment, Betrieb, Monitoring und Runbooks.
+- **EMC-DOKUMENTATION:** Projektsteuerung, Anforderungen, Fach- und Technikkonzepte, Entscheidungen, Teststrategie und Ergebnisdokumente einschließlich BL-009.
 
-linux/arm64
+Vor einem Release ist insbesondere zu prüfen, ob die Version in `package.json` zum vorgesehenen Build passt. Das Erzeugen eines lokalen Builds ist noch kein Deployment.
 
-Build-Konfiguration:
+## Weiterführende Dokumentation
 
-NGINX_CONF
+- [`README_DEVELOPER.md`](README_DEVELOPER.md) – Frontend-Architektur, Entwicklungsregeln und technische Details
+- **EMC-DOKUMENTATION** – übergreifende Projekt- und Funktionsdokumentation
+- **EMC-INFRA** – verbindliche Infrastruktur- und Betriebsdokumentation
 
-Mögliche Werte:
-
-- nginx-local.conf
-- nginx-dev.conf
-- nginx-prod.conf
-
-Deployment-Prozess:
-
-1. package.json Version prüfen
-2. npm run build
-3. Docker Image Build
-4. docker save
-5. Übertragung auf NAS
-6. docker load
-7. Portainer Redeploy
-8. Smoke Test
-
-Die Compose-Dateien sind Bestandteil des Repositories emc-infra und bilden die operative Source of Truth.
-
-## Docker
-
-Projektdateien:
-
-```text
-Dockerfile
-.dockerignore
-
-docker/
-├── nginx-local.conf
-├── nginx-dev.conf
-└── nginx-prod.conf
-```
-
-### Lokaler Test
-
-Build:
-
-```bash
-docker build \
-  --build-arg NGINX_CONF=nginx-local.conf \
-  -t emc-mitglieder-frontend:local .
-```
-
-Start:
-
-```bash
-docker run -p 8088:80 emc-mitglieder-frontend:local
-```
-
-### NAS Deployment
-
-DEV:
-
-```bash
-docker build \
-  --platform linux/arm64 \
-  --build-arg NGINX_CONF=nginx-dev.conf \
-  -t emc-mitglieder-frontend:1.1.2-SNAPSHOT .
-```
-
-PROD:
-
-```bash
-docker build \
-  --platform linux/arm64 \
-  --build-arg NGINX_CONF=nginx-prod.conf \
-  -t emc-mitglieder-frontend:1.1.1 .
-```
-
----
-
-## Betriebsstandard
-
-Im Rahmen der EMC NAS Betriebsstandardisierung wurde Frontend Deployment Standard v1 eingeführt.
-
-Merkmale:
-
-- image-basiertes Deployment
-- versioniertes Dockerfile
-- versionierte nginx-Konfiguration
-- Docker Compose Deployment
-- keine Runtime Bind-Mounts für Frontend-Artefakte
-- Git-basierte Änderungsverfolgung
-- Snapshot-/Release-Strategie analog Backend
-- ARM64-kompatible Images für NAS Deployment
-- Image-Transfer über docker save / docker load
-
-Ziel:
-
-identischer Betriebsstandard für Frontend und Backend.
-
----
-
-## Aktueller Projektstatus
-
-### Fertig
-
-- Login
-- Logout
-- Session Restore
-- Protected Routes
-- Rollenmodell
-- Mitgliederliste
-- Suche / Filter
-- Pagination
-- Detailansicht
-- AutoSave
-- Datenschutz
-- Chorkleidung
-- Neuanlage
-- Benutzerverwaltung
-- ReadOnly Viewer
-- Unit Tests
-- Reporting
-- Mitgliederverzeichnis
-- Geburtstagsliste
-- PDF-Reporting
-
----
-
-## Geplant
-
-### Security Hardening
-
-Backend-getrieben:
-
-- Session Timeout
-- Auto Logout
-- Passwortwechsel beim Erstlogin
-- Passwort Reset
-- temporäre Kontosperre
-
----
-
-### Frontend
-
-Mögliche Erweiterungen:
-
-- bessere Session Timeout UX
-- Passwortwechsel UI
-- Passwort Reset UI
-- Security Status Hinweise
-
----
-
-## Nicht im MVP
-
-- Ehrungen
-- Exporte
-- Mailfunktionen
-- Historisierung
+Diese README dokumentiert den **lokal implementierten und geprüften Stand** einschließlich BL-009. Noch nicht umgesetzte Funktionen werden erst nach ihrer tatsächlichen Integration als vorhanden aufgeführt.

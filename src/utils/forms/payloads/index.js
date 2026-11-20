@@ -6,3 +6,4 @@ export {
   createChorkleidungPayload,
   formatKaufpreis,
 } from "./chorkleidungPayload";
+export { createEhrungPayload } from "./honorPayload";

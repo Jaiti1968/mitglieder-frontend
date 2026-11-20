@@ -99,7 +99,7 @@ export default function MembersPage() {
 
         {canCreateMember && (
           <Link to="/members/new">
-            <button type="button">+ Neues Mitglied</button>
+            <button type="button">Mitglied anlegen</button>
           </Link>
         )}
       </div>

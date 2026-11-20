@@ -30,6 +30,8 @@ import UnsavedChangesDialog from "../components/common/UnsavedChangesDialog";
 import { useAutoSaveStatus } from "../hooks/useAutoSaveStatus";
 import { useUnsavedChanges } from "../hooks/useUnsavedChanges";
 
+import MemberHonorsSection from "../components/members/details/MemberHonorsSection";
+
 export default function MemberDetailPage() {
   const { mitgliedsnummer } = useParams();
   const location = useLocation();
@@ -352,6 +354,19 @@ export default function MemberDetailPage() {
               onClearServerError={() =>
                 canEdit && updateMitgliedschaftMutation.reset()
               }
+            />
+          }
+        />
+      )}
+
+      {activeTab === "ehrungen" && (
+        <MemberSection
+          title="Ehrungen"
+          isEditing={true}
+          form={
+            <MemberHonorsSection
+              mitgliedsnummer={mitgliedsnummer}
+              canEdit={canEdit}
             />
           }
         />

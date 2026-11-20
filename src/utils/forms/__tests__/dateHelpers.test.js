@@ -27,6 +27,18 @@ describe("dateHelpers", () => {
     it("returns false for invalid format", () => {
       expect(isCompleteDate("2026-05-15")).toBe(false);
     });
+
+    it("returns false for a non-existent calendar date", () => {
+      expect(isCompleteDate("31.02.2026")).toBe(false);
+    });
+
+    it("returns false for February 29 in a non-leap year", () => {
+      expect(isCompleteDate("29.02.2025")).toBe(false);
+    });
+
+    it("returns true for February 29 in a leap year", () => {
+      expect(isCompleteDate("29.02.2024")).toBe(true);
+    });
   });
 
   describe("isDateBefore", () => {

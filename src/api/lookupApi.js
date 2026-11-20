@@ -7,3 +7,7 @@ export function getMemberStatuses() {
 export function getVoices() {
   return apiGet("/api/lookups/voices");
 }
+
+export function getHonors() {
+  return apiGet("/api/lookups/honors");
+}
