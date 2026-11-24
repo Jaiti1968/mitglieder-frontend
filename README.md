@@ -1,8 +1,8 @@
 # EMC Mitgliederverwaltung – Frontend
 
-**Stand der Dokumentation:** 20.11.2026
+**Stand der Dokumentation:** 24.11.2026
 
-**Grundlage:** bisher geprüfte Codebasis und abgeschlossene BL-009-Umsetzung mit erfolgreichen Tests vom 20.11.2026
+**Grundlage:** geprüfte Codebasis einschließlich BL-009 Ehrungen und der nachträglichen Layoutanpassung mit erfolgreichen Tests vom 24.11.2026
 
 **Version laut letztem Testlauf (`npm run test:run`):** `1.3.0-SNAPSHOT`
 
@@ -20,7 +20,7 @@ Im vorliegenden Code umgesetzt:
 - Reporting: Mitgliederverzeichnis mit PDF- und Excel-Export sowie Geburtstagsliste mit PDF-Export
 - Kennzeichnung der Laufzeitumgebung und Dialog mit technischen Systeminformationen
 
-**Abgrenzung:** BL-009 Ehrungen ist im Frontend und Backend implementiert und lokal geprüft; Commit, Merge und kontrolliertes Deployment stehen noch aus. BL-010 Funktionen und BL-011 Verteiler sind nicht Bestandteil dieses Stands. Die Pflege der Ehrungsarten selbst erfolgt weiterhin außerhalb der Weboberfläche. Weitere geplante Funktionen sind in EMC-DOKUMENTATION beschrieben.
+**Abgrenzung:** BL-009 Ehrungen ist im Frontend und Backend vollständig implementiert, fachlich abgenommen und einschließlich der nachträglichen Layoutanpassung in den jeweiligen Master-Stand übernommen. Das kontrollierte Deployment nach DEV und PROD steht noch aus. BL-010 Funktionen und BL-011 Verteiler sind nicht Bestandteil dieses Stands. Die Pflege der Ehrungsarten selbst erfolgt weiterhin außerhalb der Weboberfläche. Weitere geplante Funktionen sind in EMC-DOKUMENTATION beschrieben.
 
 ## Technologie
 
@@ -54,7 +54,7 @@ npm run build      # Produktions-Build in dist/
 npm run preview    # Lokale Vorschau des Builds
 ```
 
-Maßgeblich ist der jeweils aktuelle Testlauf. Am 20.11.2026 bestanden 110 Frontend-Tests in 14 Testdateien. Neben Formularvalidierung und Hilfsfunktionen werden für BL-009 auch Ehrungs-Payloads, Dialogverhalten, AutoSave, Löschfehler und die Kennzeichnung zukünftiger Termine geprüft.
+Maßgeblich ist der jeweils aktuelle Testlauf. Am 24.11.2026 bestanden 112 Frontend-Tests in 14 Testdateien. Neben Formularvalidierung und Hilfsfunktionen werden für BL-009 auch Ehrungs-Payloads, Dialogverhalten, AutoSave, Löschfehler, die Kennzeichnung zukünftiger Termine sowie die bedingte Anzeige der Spaltenüberschriften geprüft.
 
 **Hinweis:** Konfigurationswerte, Protokolle und Konsolenausgaben können Zugangsdaten enthalten. Solche Informationen vor einer Weitergabe schwärzen.
 
@@ -62,15 +62,15 @@ Maßgeblich ist der jeweils aktuelle Testlauf. Am 20.11.2026 bestanden 110 Front
 
 Die wichtigsten Routen sind:
 
-| Route | Funktion |
-| --- | --- |
-| `/login` | Anmeldung |
-| `/members` | Mitgliederübersicht |
-| `/members/new` | Mitglied anlegen |
-| `/members/:mitgliedsnummer` | Mitgliederdetails |
-| `/admin/users` | Benutzerverwaltung |
-| `/reporting` | Auswahl und Anzeige der verfügbaren Berichte |
-| `/reporting/members-directory` | Mitgliederverzeichnis als eigene Route |
+| Route                          | Funktion                                     |
+| ------------------------------ | -------------------------------------------- |
+| `/login`                       | Anmeldung                                    |
+| `/members`                     | Mitgliederübersicht                          |
+| `/members/new`                 | Mitglied anlegen                             |
+| `/members/:mitgliedsnummer`    | Mitgliederdetails                            |
+| `/admin/users`                 | Benutzerverwaltung                           |
+| `/reporting`                   | Auswahl und Anzeige der verfügbaren Berichte |
+| `/reporting/members-directory` | Mitgliederverzeichnis als eigene Route       |
 
 Die Geburtstagsliste wird innerhalb von `/reporting` ausgewählt; für sie ist in `AppRoutes.jsx` keine eigene Route definiert.
 
@@ -82,7 +82,11 @@ In den Mitgliederdetails können `ADMIN` und `EDITOR` Ehrungen anzeigen, anlegen
 
 Bei der **Neuanlage** wird erst mit „Speichern“ übernommen; „Abbrechen“ verwirft die Eingaben. Bei der **Bearbeitung** werden gültige Änderungen nach einer kurzen Verzögerung automatisch gespeichert (AutoSave, 500 ms). Bereits erfolgreich gespeicherte Änderungen bleiben beim Schließen erhalten. Bei einem Speicherfehler kann erneut gespeichert oder das Verwerfen noch nicht gespeicherter Änderungen bestätigt werden.
 
-Das Verleihungsdatum ist optional und darf in der Zukunft liegen. Zukünftige Daten werden mit „Zukünftiger Termin“ gekennzeichnet; am Termintag entfällt der Hinweis. Eine automatische Aktualisierung um Mitternacht ohne erneutes Laden ist nicht vorgesehen. Pro Mitglied darf jede Ehrungsart nur einmal vergeben werden. Die Liste ist nach Verleihungsdatum absteigend sortiert; undatierte Ehrungen stehen zuletzt.
+Die Ehrungsübersicht verwendet ein einheitliches Spaltenlayout mit den Überschriften „Ehrung“ und „Verliehen am“. Die einzelnen Ehrungen werden als separate, abgerundete und umrandete Zeilen dargestellt. Spaltenüberschriften und Eintragswerte verwenden dieselbe Schriftgröße. Die Spaltenüberschriften werden nur bei vorhandenen Ehrungen angezeigt.
+
+Das Verleihungsdatum ist optional und darf in der Zukunft liegen. Fehlende Datumswerte werden durch einen Gedankenstrich dargestellt. Zukünftige Daten werden mit „Zukünftiger Termin“ unterhalb der Ehrungsbezeichnung gekennzeichnet; am Termintag entfällt der Hinweis. Eine automatische Aktualisierung um Mitternacht ohne erneutes Laden ist nicht vorgesehen.
+
+Pro Mitglied darf jede Ehrungsart nur einmal vergeben werden. Die Liste ist nach Verleihungsdatum absteigend sortiert; bei gleichem Datum erfolgt die Sortierung nach der ID der Ehrungsart aufsteigend. Undatierte Ehrungen stehen zuletzt.
 
 Access und Webanwendung verwenden während der Übergangsphase dieselben Ehrungsdaten. Die gegenseitige Sichtbarkeit von Änderungen wurde praktisch geprüft. Fachliche Regeln und Abnahme sind in EMC-DOKUMENTATION unter BL-009 festgehalten.
 
@@ -124,10 +128,10 @@ Die fachlichen API-Aufrufe sind unter `src/api/` gekapselt. Der gemeinsame API-C
 
 Unter `/reporting` können Administratoren zwischen folgenden Berichten wählen:
 
-| Bericht | Anzeige und Ausgabe |
-| --- | --- |
-| Mitgliederverzeichnis | Browseransicht, PDF und Excel |
-| Geburtstagsliste | Browseransicht mit Monatsgruppierung und Kennzeichnung runder Geburtstage, PDF |
+| Bericht               | Anzeige und Ausgabe                                                            |
+| --------------------- | ------------------------------------------------------------------------------ |
+| Mitgliederverzeichnis | Browseransicht, PDF und Excel                                                  |
+| Geburtstagsliste      | Browseransicht mit Monatsgruppierung und Kennzeichnung runder Geburtstage, PDF |
 
 Die Berichte werden über das Backend erzeugt bzw. mit Daten versorgt. Fachliche Regeln und Reporting-Entscheidungen sind in EMC-DOKUMENTATION beschrieben.
 

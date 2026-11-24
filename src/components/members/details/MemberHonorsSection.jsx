@@ -99,6 +99,11 @@ export default function MemberHonorsSection({
         <p>Für dieses Mitglied sind keine Ehrungen erfasst.</p>
       ) : (
         <div className="honor-list">
+          <div className="honor-list-header">
+            <span>Ehrung</span>
+            <span>Verliehen am</span>
+          </div>
+
           {honors.map((honor) => {
             const germanDate = honor.honorDate
               ? formatIsoDateToGerman(honor.honorDate)
@@ -126,16 +131,17 @@ export default function MemberHonorsSection({
                     : undefined
                 }
               >
-                <span className="honor-card-name">{honor.honorName}</span>
+                <div className="honor-card-description">
+                  <span className="honor-card-name">{honor.honorName}</span>
 
-                <span className="honor-card-date">
                   {futureDate && (
-                    <span style={{ marginRight: "1rem" }}>
+                    <span className="honor-card-future">
                       Zukünftiger Termin
                     </span>
                   )}
-                  <span>Verliehen: {germanDate}</span>
-                </span>
+                </div>
+
+                <span className="honor-card-date">{germanDate}</span>
               </div>
             );
           })}
