@@ -1,8 +1,8 @@
 # EMC Mitgliederverwaltung – Frontend Developer Guide
 
-**Dokumentstand:** 20.11.2026
+**Dokumentstand:** 24.11.2026
 
-**Dokumentierter Entwicklungsstand:** `1.3.0-SNAPSHOT` auf `feature/BL-009-ehrungen` (BL-009 lokal implementiert und getestet; Bereitstellung auf DEV/PROD noch offen). Die frühere vollständige Codebasisprüfung bezog sich auf `mitglieder-frontend(3).zip` (`1.2.3`); BL-009 wird anhand der umgesetzten Komponenten und der durchgeführten Tests ergänzt.
+**Dokumentierter Entwicklungsstand:** `1.3.0-SNAPSHOT` einschließlich der vollständigen BL-009-Implementierung und der nachträglichen Layoutanpassung der Ehrungsübersicht. Die Änderungen sind in `master` enthalten, lokal geprüft und fachlich abgenommen. Die Bereitstellung auf DEV und PROD steht noch aus.
 
 ## 1. Zweck und Dokumentationsgrenzen
 
@@ -17,15 +17,15 @@ Betriebsanweisungen werden nicht parallel in diesem Dokument gepflegt. Bei Wider
 
 ## 2. Technologie und Build
 
-| Bereich | Implementierung |
-| --- | --- |
-| Oberfläche | React 19, JavaScript |
-| Build/Entwicklung | Vite 6 |
-| Navigation | React Router 7 |
-| Serverdaten | TanStack React Query 5 |
-| Formulare | React Hook Form 7 |
-| Tests | Vitest 4 über `scripts/run-vitest.mjs` |
-| Statische Bereitstellung | Docker mit NGINX |
+| Bereich                  | Implementierung                        |
+| ------------------------ | -------------------------------------- |
+| Oberfläche               | React 19, JavaScript                   |
+| Build/Entwicklung        | Vite 6                                 |
+| Navigation               | React Router 7                         |
+| Serverdaten              | TanStack React Query 5                 |
+| Formulare                | React Hook Form 7                      |
+| Tests                    | Vitest 4 über `scripts/run-vitest.mjs` |
+| Statische Bereitstellung | Docker mit NGINX                       |
 
 Maßgeblich für die exakten Versionen sind `package.json` und `package-lock.json`.
 
@@ -67,15 +67,15 @@ Grundprinzip: Seiten koordinieren Navigation und Datenzugriff, fachliche Kompone
 
 Routendefinition: `src/routes/AppRoutes.jsx`.
 
-| Route | Zweck |
-| --- | --- |
-| `/login` | Anmeldung (öffentlich) |
-| `/members` | Mitgliederliste |
-| `/members/new` | Mitglied anlegen |
-| `/members/:mitgliedsnummer` | Mitgliederdetails |
-| `/admin/users` | Benutzerverwaltung |
-| `/reporting` | Berichtsübersicht und Geburtstagsliste |
-| `/reporting/members-directory` | Mitgliederverzeichnis |
+| Route                          | Zweck                                  |
+| ------------------------------ | -------------------------------------- |
+| `/login`                       | Anmeldung (öffentlich)                 |
+| `/members`                     | Mitgliederliste                        |
+| `/members/new`                 | Mitglied anlegen                       |
+| `/members/:mitgliedsnummer`    | Mitgliederdetails                      |
+| `/admin/users`                 | Benutzerverwaltung                     |
+| `/reporting`                   | Berichtsübersicht und Geburtstagsliste |
+| `/reporting/members-directory` | Mitgliederverzeichnis                  |
 
 `/` leitet auf `/members` um. Die geschützten Seiten liegen unter `ProtectedRoute` und `AppLayout`. Die Geburtstagsliste besitzt keine eigene Route, sondern wird innerhalb des Reporting-Bereichs ausgewählt.
 
@@ -167,8 +167,8 @@ Die aktuelle Anzeige besteht aus:
 Die Umgebungskennung wird anhand der Backend-Antwort geprüft. Der Systeminfo-Dialog kann unter anderem Frontend-/Backend-Version, Build-Zeitpunkte und Backend-Profile anzeigen. Die Frontend-Version und Build-Zeit werden über `vite.config.js` aus der Paketversion beziehungsweise dem Build-Zeitpunkt eingebettet:
 
 ```javascript
-import.meta.env.VITE_APP_VERSION
-import.meta.env.VITE_APP_BUILD_TIME
+import.meta.env.VITE_APP_VERSION;
+import.meta.env.VITE_APP_BUILD_TIME;
 ```
 
 Die frühere Darstellung von Proxy-Zielen und technischen Verbindungsdetails im allgemeinen Umgebungsindikator ist **nicht** mehr der aktuelle Stand. Angaben zur betrieblichen Zuordnung von LOCAL/DEV/PROD stehen in EMC-INFRA; Anforderungen und Entscheidungen zur Anzeige in EMC-DOKUMENTATION (BL-019).
@@ -181,7 +181,16 @@ Die Implementierung verteilt sich auf `src/pages/`, `src/components/reporting/` 
 
 ## 12. Automatisierte Tests
 
-Die Frontend-Tests verwenden Vitest. Neben Formularvalidierung und Hilfsfunktionen (`validationHelpers`, `dateHelpers` und die bisherigen Fachvalidatoren) sind für BL-009 Tests der Ehrungsvalidierung, Payload-Erzeugung, Dialogzustände und API-Mutationsanbindung hinzugekommen. `MemberHonorsSection.test.jsx` prüft außerdem die Anzeige des Hinweises „Zukünftiger Termin“ für zukünftige, heutige, vergangene und fehlende Ehrungsdaten.
+Die Frontend-Tests verwenden Vitest. Neben Formularvalidierung und Hilfsfunktionen (`validationHelpers`, `dateHelpers` und die bisherigen Fachvalidatoren) sind für BL-009 Tests der Ehrungsvalidierung, Payload-Erzeugung, Dialogzustände und API-Mutationsanbindung hinzugekommen.
+
+`MemberHonorsSection.test.jsx` prüft außerdem:
+
+- Die Anzeige des Hinweises „Zukünftiger Termin“ für zukünftige, heutige, vergangene und fehlende Ehrungsdaten.
+- Die Position des Zukunftshinweises innerhalb der Ehrungsbeschreibung.
+- Die Anzeige der Spaltenüberschriften bei vorhandenen Ehrungen.
+- Das Ausblenden der Spaltenüberschriften bei einer leeren Ehrungsliste.
+
+Die optische Ausrichtung der Spalten und das responsive Verhalten wurden zusätzlich im Browser geprüft.
 
 ```bash
 npm run test:run
@@ -189,7 +198,7 @@ npm run lint
 npm run build
 ```
 
-**Letzter bestätigter vollständiger Frontend-Testlauf (20.11.2026): 14 Testdateien, 110 Tests bestanden, 0 fehlgeschlagen.** Dies ist ein dokumentiertes Prüfergebnis und keine dauerhaft garantierte Testanzahl. Für neue Funktionen sind geeignete Tests der fachlichen Logik und, soweit erforderlich, der API-Interaktion und Dialogzustände zu ergänzen.
+**Letzter bestätigter vollständiger Frontend-Testlauf (24.11.2026): 14 Testdateien, 112 Tests bestanden, 0 fehlgeschlagen.** Dies ist ein dokumentiertes Prüfergebnis und keine dauerhaft garantierte Testanzahl. Für neue Funktionen sind geeignete Tests der fachlichen Logik und, soweit erforderlich, der API-Interaktion und Dialogzustände zu ergänzen.
 
 ## 13. Entwicklungsworkflow und Versionierung
 
@@ -199,9 +208,11 @@ Die Version wird in `package.json` geführt und von Vite zur Build-Zeit eingebet
 
 Aktueller Kontext:
 
-- Frühere vollständige Codebasisprüfung: `1.2.3`.
-- Aktueller BL-009-Entwicklungsstand: `feature/BL-009-ehrungen`, Paketversion `1.3.0-SNAPSHOT`.
-- BL-009 ist implementiert und lokal getestet; Commit, Merge und Deployment sind gesondert durchzuführen.
+- Aktuelle Paketversion: `1.3.0-SNAPSHOT`.
+- BL-009 Ehrungen einschließlich der nachträglichen Layoutanpassung ist vollständig in `master` enthalten.
+- BUG-004 ist ebenfalls Bestandteil dieses Entwicklungsstands.
+- Die fachliche Abnahme und die automatisierten Frontend-Tests sind erfolgreich abgeschlossen.
+- Die kontrollierte Bereitstellung auf DEV und PROD steht noch aus.
 
 ## 14. Docker und Betrieb
 
@@ -220,17 +231,55 @@ BL-009 ist im aktuellen Frontend-Entwicklungsstand umgesetzt. Der Ehrungsbereich
 - `MemberHonorCreateDialog.jsx` und `MemberHonorEditDialog.jsx` behandeln Neuanlage und Bearbeitung mit unterschiedlichem Speicherverhalten (siehe Abschnitt 9.1).
 - `honorValidator` und `honorPayload` bilden Frontend-Prüfungen und API-Nutzdaten ab. Die verbindlichen Regeln prüft das Backend.
 
-Die Anzeige folgt der vom Backend gelieferten Reihenfolge: Ehrungsdatum absteigend, bei gleichem Datum Ehrungsart-ID aufsteigend, fehlende Daten zuletzt. Für Ehrungsdaten nach dem aktuellen Tag erscheint „Zukünftiger Termin“. Der Hinweis ist nicht persistiert; eine automatische Aktualisierung um Mitternacht ohne Neuladen ist nicht erforderlich.
+Die Anzeige folgt der vom Backend gelieferten Reihenfolge: Ehrungsdatum absteigend, bei gleichem Datum Ehrungsart-ID aufsteigend, fehlende Daten zuletzt.
+
+Für Ehrungsdaten nach dem aktuellen Tag erscheint „Zukünftiger Termin“ unterhalb der Ehrungsbezeichnung. Der Hinweis ist nicht persistiert; eine automatische Aktualisierung um Mitternacht ohne Neuladen ist nicht erforderlich.
+
+#### Darstellung der Ehrungsübersicht
+
+Die Ehrungsübersicht verwendet ein spaltenorientiertes Kartenlayout mit den Überschriften „Ehrung“ und „Verliehen am“. Die Spaltenüberschriften werden nur bei vorhandenen Ehrungszuordnungen angezeigt.
+
+Das Layout wird in `styles.css` über CSS Grid umgesetzt:
+
+- `.honor-list`: Container der Ehrungsliste mit einer maximalen Breite von 750 px.
+- `.honor-list-header`: gemeinsame Spaltenüberschriften.
+- `.honor-card`: einzelne Ehrungszeile unter Wiederverwendung des allgemeinen Kartenlayouts `.member-card`.
+- `.honor-card-description`: Ehrungsbezeichnung und gegebenenfalls Zukunftshinweis.
+- `.honor-card-name`: Ehrungsbezeichnung.
+- `.honor-card-future`: ergänzender Hinweis auf einen zukünftigen Termin.
+- `.honor-card-date`: linksbündige Anzeige des Verleihungsdatums.
+
+Die CSS-Variable `--honor-columns` definiert ein gemeinsames Spaltenraster für Überschriften und Ehrungszeilen. Die Datumsspalte verwendet regulär 25 % der verfügbaren Rasterbreite. Bei Bildschirmbreiten bis 550 px wird sie auf 7,5 rem festgelegt.
+
+Spaltenüberschriften und Eintragswerte verwenden dieselbe Schriftgröße. Der Zukunftshinweis wird als ergänzende Information kleiner dargestellt.
+
+Das Darstellungskonzept dient auch als Orientierung für BL-010 Funktionen. Eine gemeinsame React-Komponente für beide Bereiche wurde bislang bewusst nicht eingeführt.
 
 ### 15.2 Fachliche Regeln und Zugriff
 
 Eine Ehrungsart darf pro Mitglied nur einmal zugeordnet sein. Das Ehrungsdatum ist optional und darf auch in der Zukunft liegen. Eine bestehende Zuordnung kann geändert oder nach Bestätigung gelöscht werden. `ADMIN` und `EDITOR` erhalten Schreibaktionen, `VIEWER` eine reine Leseansicht. Die Rollenprüfung wird zusätzlich im Backend erzwungen.
 
-Während der Übergangsphase nutzen Access und Webanwendung dieselben Ehrungsdaten. Die Kompatibilität wurde in beide Richtungen praktisch geprüft; für BL-009 wurden keine Datenbankschemaänderungen vorgenommen.
+Während der Übergangsphase nutzen Access und Webanwendung dieselben Ehrungsdaten. Die Kompatibilität wurde in beide Richtungen praktisch geprüft.
+
+Eine nachträgliche Datenbank-Bestandsaufnahme hat unterschiedliche Schema-Constraints zwischen DEV/TEST und PROD ergeben. DEV und TEST sichern die Pflichtangabe der Ehrungsart und die Eindeutigkeit der Kombination aus Mitglied und Ehrungsart bereits auf Datenbankebene ab.
+
+Die Angleichung der PROD-Datenbank wurde vorbereitet und in EMC-DOKUMENTATION unter `BL-009-datenbank-schemaangleichung-v0.1.md` dokumentiert. Sie wurde noch nicht ausgeführt. Die bestehenden Fremdschlüsselregeln bleiben unverändert.
+
+Aus der Schemaangleichung ergibt sich nach erfolgter Prüfung kein erforderlicher Änderungsbedarf an der Frontend-Implementierung.
 
 ### 15.3 Offene Arbeiten
 
-Die Implementierung und die lokale fachliche Abnahme sind abgeschlossen. Commit und Merge sowie die kontrollierte Bereitstellung auf DEV und später PROD stehen noch aus. Details und Abnahmeergebnisse stehen im BL-009-Ergebnisdokument in **EMC-DOKUMENTATION**.
+Die Implementierung und die lokale fachliche Abnahme einschließlich der nachträglichen Layoutanpassung sind abgeschlossen. Sämtliche Frontend-Änderungen zu BL-009 sind in `master` enthalten.
+
+Noch ausstehend sind:
+
+- Kontrollierte Bereitstellung und Funktionsprüfung in DEV.
+- Praktische Erprobung der vorbereiteten SQL-Änderungs- und Rückfallskripte.
+- Angleichung des PROD-Datenbankschemas nach gesonderter Freigabe.
+- Kontrollierte Bereitstellung und Funktionsprüfung in PROD.
+- Aktualisierung der Versions- und Änderungsdokumentation entsprechend dem tatsächlichen Bereitstellungsstand.
+
+Details und Abnahmeergebnisse stehen im `BL-009-ehrungen-Ergebnisdokument-v0.2.md` in **EMC-DOKUMENTATION**.
 
 BL-010 Funktionen und BL-011 Verteiler sind **nicht** Teil der BL-009-Implementierung. Gemeinsame UI-Bausteine können später wiederverwendet werden, die fachlichen Regeln bleiben getrennt; insbesondere darf die Eindeutigkeitsregel für Ehrungen nicht auf Funktionen übertragen werden.
 

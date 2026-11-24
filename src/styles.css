@@ -190,40 +190,61 @@ button.danger:hover {
   display: grid;
   gap: 0.75rem;
   max-width: 750px;
+
+  --honor-columns: minmax(0, 1fr) 25%;
+}
+
+.honor-list-header,
+.honor-card {
+  display: grid;
+  grid-template-columns: var(--honor-columns);
+  align-items: center;
+  gap: 1rem;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.honor-list-header {
+  padding: 0 1rem;
+  border: 1px solid transparent;
+  font-weight: 600;
 }
 
 .honor-card {
   width: 100%;
   text-align: left;
-  font: inherit;
+}
+
+.honor-card-description {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .honor-card-name {
   font-weight: 600;
 }
 
-.honor-card-date {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-left: auto;
+.honor-card-future {
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+}
+
+.honor-card-date {
+  text-align: left;
   white-space: nowrap;
 }
 
-.honor-card-date-value {
-  text-align: right;
-}
-
 @media (max-width: 550px) {
-  .honor-card {
-    flex-wrap: wrap;
+  .honor-list {
+    --honor-columns: minmax(0, 1fr) 7.5rem;
   }
 
-  .honor-card-date {
-    white-space: normal;
+  .honor-list-header,
+  .honor-card {
+    gap: 0.5rem;
   }
 }
 
