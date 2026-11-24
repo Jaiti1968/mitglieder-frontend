@@ -11,6 +11,11 @@ import MemberSection from "../components/members/details/MemberSection";
 import ErrorBox from "../components/common/ErrorBox";
 import BackLink from "../components/common/BackLink";
 import { validateMemberCreation } from "../utils/forms/validateMemberCreation";
+import {
+  createStammdatenPayload,
+  createKontaktPayload,
+  createMitgliedschaftPayload,
+} from "../utils/forms/payloads";
 
 export default function CreateMemberPage() {
   const navigate = useNavigate();
@@ -154,9 +159,9 @@ export default function CreateMemberPage() {
     createMemberMutation.reset();
 
     createMemberMutation.mutate({
-      stammdaten: normalizeStammdaten(stammdaten),
-      kontakt: normalizeKontakt(kontakt),
-      mitgliedschaft: normalizeMitgliedschaft(mitgliedschaft),
+      stammdaten: createStammdatenPayload(stammdaten),
+      kontakt: createKontaktPayload(kontakt),
+      mitgliedschaft: createMitgliedschaftPayload(mitgliedschaft),
     });
   }
 
@@ -285,45 +290,6 @@ export default function CreateMemberPage() {
       </section>
     </main>
   );
-}
-
-function normalizeStammdaten(stammdaten) {
-  const isFirma = stammdaten.personFirma === true;
-
-  return {
-    personFirma: isFirma,
-    anrede: isFirma ? "" : (stammdaten.anrede ?? ""),
-    akademischerTitel: isFirma ? "" : (stammdaten.akademischerTitel ?? ""),
-    vorname: stammdaten.vorname ?? "",
-    nachname: stammdaten.nachname ?? "",
-    geburtsdatum: isFirma ? "" : (stammdaten.geburtsdatum ?? ""),
-    plz: stammdaten.plz ?? "",
-    ort: stammdaten.ort ?? "",
-    strasseHausNr: stammdaten.strasseHausNr ?? "",
-  };
-}
-
-function normalizeKontakt(kontakt) {
-  return {
-    telefonPrivat: kontakt.telefonPrivat ?? "",
-    telefonGeschaeftlich: kontakt.telefonGeschaeftlich ?? "",
-    mobiltelefon: kontakt.mobiltelefon ?? "",
-    email: kontakt.email ?? "",
-    adresszusatz: kontakt.adresszusatz ?? "",
-    briefanrede: kontakt.briefanrede ?? "",
-  };
-}
-
-function normalizeMitgliedschaft(mitgliedschaft) {
-  return {
-    eintritt: mitgliedschaft.eintritt || null,
-    austritt: mitgliedschaft.austritt || null,
-    mitgliedsstatusId: mitgliedschaft.mitgliedsstatusId
-      ? Number(mitgliedschaft.mitgliedsstatusId)
-      : null,
-    stimmeId: mitgliedschaft.stimmeId ? Number(mitgliedschaft.stimmeId) : null,
-    kammerchor: mitgliedschaft.kammerchor === true,
-  };
 }
 
 const headerStyle = {
