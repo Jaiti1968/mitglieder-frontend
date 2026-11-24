@@ -2,7 +2,9 @@
 
 **Dokumentstand:** 24.11.2026
 
-**Dokumentierter Entwicklungsstand:** `1.3.0-SNAPSHOT` einschließlich der vollständigen BL-009-Implementierung und der nachträglichen Layoutanpassung der Ehrungsübersicht. Die Änderungen sind in `master` enthalten, lokal geprüft und fachlich abgenommen. Die Bereitstellung auf DEV und PROD steht noch aus.
+**Dokumentierter Entwicklungsstand:** `1.3.0-SNAPSHOT` einschließlich der vollständigen BL-009-Implementierung, der nachträglichen Layoutanpassung der Ehrungsübersicht sowie BUG-004 einschließlich der Nachbesserung zur Payload-Erzeugung bei der Mitgliedsneuanlage.
+
+BL-009 wurde in DEV bereitgestellt und erfolgreich geprüft. Die Nachbesserung zu BUG-004 wurde lokal implementiert und erfolgreich gegen das DEV-Backend geprüft. Die erneute Bereitstellung des Frontends in DEV sowie die Bereitstellung in PROD stehen noch aus.
 
 ## 1. Zweck und Dokumentationsgrenzen
 
@@ -133,6 +135,67 @@ Die Formulare liegen unter `src/components/members/details/`. Gemeinsame Eingabe
 
 `src/utils/forms/` enthält Validierungsfunktionen, Payload-Erzeugung, Standardwerte und Datumshelfer. Neue Formulare sollten diese Trennung beibehalten. Das Backend bleibt für die verbindliche fachliche Validierung zuständig; die Frontend-Validierung dient zusätzlich einer verständlichen Eingabeführung. Für Ehrungen liegen die fachliche Prüfung und Payload-Erzeugung insbesondere in `honorValidator` und `honorPayload`.
 
+### 8.1 Mitgliedsneuanlage (BUG-004)
+
+Die Mitgliedsneuanlage wird durch `src/pages/CreateMemberPage.jsx` koordiniert.
+
+Die Seite hält den gemeinsamen Formularzustand für Stammdaten, Kontakt und Mitgliedschaft. Die einzelnen Formulare übertragen ihre aktuellen Werte über `onFormValuesChange` an die übergeordnete Seite. Dabei müssen auch nachträglich geleerte Felder übertragen werden.
+
+Der Wechsel zwischen den Registerkarten darf weder zu einem Verlust der Eingaben noch zu einer Wiederherstellung zuvor gelöschter Werte führen.
+
+Die registerkartenübergreifende Validierung erfolgt über `validateMemberCreation.js`. Dabei werden die vorhandenen Fachvalidatoren wiederverwendet.
+
+Die Schaltfläche „Speichern“ wird nur bei einem insgesamt gültigen Formularzustand aktiviert. Bei ungültigen Eingaben werden die betroffenen Registerkarten, Feldbezeichnungen und Fehlermeldungen in einem Hinweis an der deaktivierten Schaltfläche angezeigt.
+
+Während der Mitgliedsneuanlage erfolgt kein AutoSave an das Backend. Die Übertragung erfolgt ausschließlich durch ausdrückliches Speichern über `POST /api/members`.
+
+### 8.2 Gemeinsame Payload-Erzeugung
+
+Die Aufbereitung der an das Backend zu übertragenden Daten erfolgt über gemeinsame Payload-Funktionen unter `src/utils/forms/payloads/`.
+
+Für die Mitgliedsneuanlage und die Bearbeitung bestehender Mitglieder werden folgende Funktionen gemeinsam verwendet:
+
+| Datenbereich   | Datei                  | Funktion                        |
+| -------------- | ---------------------- | ------------------------------- |
+| Stammdaten     | `stammdatenPayload.js` | `createStammdatenPayload()`     |
+| Kontakt        | `contactPayload.js`    | `createKontaktPayload()`        |
+| Mitgliedschaft | `membershipPayload.js` | `createMitgliedschaftPayload()` |
+
+Die Funktionen werden über `src/utils/forms/payloads/index.js` bereitgestellt.
+
+`CreateMemberPage.jsx` verwendet dieselben Payload-Funktionen wie die jeweiligen bestehenden Mitgliedsformulare mit AutoSave.
+
+Die zuvor in `CreateMemberPage.jsx` vorhandenen lokalen Normalisierungsfunktionen wurden im Rahmen der Nachbesserung zu BUG-004 entfernt. Dadurch entfällt die doppelte Implementierung der Datenaufbereitung.
+
+**Entwicklungskonvention:**
+
+Wird dieselbe fachliche Datenstruktur über unterschiedliche Bedien- oder Speicherwege an das Backend übertragen, ist eine gemeinsame Payload-Funktion zu verwenden.
+
+Die Aufbereitung technischer Datenformate erfolgt getrennt vom Formularzustand und der Formularvalidierung.
+
+Bei Erweiterungen ist zu prüfen, ob bereits vorhandene Payload-Funktionen wiederverwendet werden können. Dies gilt insbesondere für neue Funktionen mit getrennten Dialogen zur Neuanlage und Bearbeitung.
+
+### 8.3 Datumsverarbeitung und API-Datenformate
+
+Die Darstellung und Erfassung von Datumswerten in der Oberfläche ist von deren technischer Übertragung an das Backend zu unterscheiden.
+
+| Verarbeitungsebene    | Belegtes Datumsfeld       | Leeres Datumsfeld |
+| --------------------- | ------------------------- | ----------------- |
+| Formularzustand       | `15.06.1980`              | `""`              |
+| JSON-Payload          | `"1980-06-15"`            | `null`            |
+| Backend (`LocalDate`) | entsprechender Datumswert | `null`            |
+| Datenbank (`DATE`)    | `1980-06-15`              | SQL-`NULL`        |
+
+Die Umwandlung vom deutschen Anzeigeformat in das ISO-Datumsformat erfolgt über `parseGermanDateToIso()` aus `src/utils/forms/dateHelpers.js` innerhalb der jeweiligen Payload-Funktion.
+
+Nicht belegte optionale Datumsfelder werden als `null` an das Backend übertragen. Leere Strings sind Bestandteil des Formularzustands, nicht das vorgesehene API-Format für Datumsfelder.
+
+Beim Wechsel von Person zu Firma beziehungsweise Organisation wird ein gegebenenfalls zuvor erfasstes Geburtsdatum nicht an das Backend übernommen. Die Stammdaten-Payload enthält in diesem Fall `geburtsdatum: null`.
+
+Lookup-IDs werden durch die jeweilige Payload-Funktion in numerische Werte umgewandelt, sofern sie belegt sind.
+
+Die technische Formatumwandlung ersetzt keine fachliche Validierung. Die Zulässigkeit zukünftiger Datumswerte ist weiterhin vom jeweiligen fachlichen Datenbereich abhängig.
+
 ## 9. AutoSave und Schutz vor Datenverlust
 
 Der vorhandene Hook `src/hooks/forms/useAutoSaveForm.js` verwendet React Hook Form und `useWatch`. Der Standard-Debounce beträgt **500 ms**. Er unterstützt unter anderem Validierung, Payload-Erzeugung, Rückmeldungen zu Speicheroperationen und die Zuordnung von Backend-Validierungsfehlern.
@@ -146,6 +209,10 @@ Ergänzende Bausteine:
 **Technische Einschränkungen des geprüften Stands:** Die vorhandene AutoSave-Logik verhindert nicht grundsätzlich parallele bereits gestartete Requests. Änderungen während der Debounce-Wartezeit werden durch den Status-Hook allein nicht vollständig als ausstehend erfasst. Beim Schließen eines einzelnen Bearbeitungsdialogs ist deshalb eine gesonderte Absicherung erforderlich.
 
 Für neue Dialoge ist vor der Wiederverwendung des Hooks zu prüfen, ob laufende Requests, fehlgeschlagene Speicherungen und das Schließen des Dialogs korrekt behandelt werden. Die bestehenden Mitgliedsformulare wurden im Rahmen von BL-009 nicht pauschal umgebaut.
+
+Bei der Mitgliedsneuanlage wird AutoSave nicht für die Übertragung an das Backend verwendet. Die Neuanlage und die Bearbeitung bestehender Mitglieder unterscheiden sich im Speicherzeitpunkt, verwenden jedoch dieselben jeweiligen Payload-Funktionen (siehe Abschnitt 8.2).
+
+Änderungen an gemeinsam verwendeten Payload-Funktionen sind deshalb sowohl hinsichtlich der Mitgliedsneuanlage als auch hinsichtlich der bestehenden AutoSave-Verarbeitung zu prüfen.
 
 ### 9.1 Ehrungsdialoge (BL-009)
 
@@ -192,13 +259,36 @@ Die Frontend-Tests verwenden Vitest. Neben Formularvalidierung und Hilfsfunktion
 
 Die optische Ausrichtung der Spalten und das responsive Verhalten wurden zusätzlich im Browser geprüft.
 
+### Regressionstests zu BUG-004
+
+`validateMemberCreation.test.js` prüft die registerkartenübergreifende Formularvalidierung bei der Mitgliedsneuanlage.
+
+Mit `src/pages/__tests__/CreateMemberPage.test.jsx` wird zusätzlich die tatsächliche Seitenkomponente mit den zugehörigen Formularen und gemockter API-Anbindung geprüft.
+
+Die sechs Komponententests decken folgende Fälle ab:
+
+| Testfall | Prüfgegenstand                                                                              |
+| -------- | ------------------------------------------------------------------------------------------- |
+| T01      | Übertragung von Geburtsdatum, Eintritt und Austritt im ISO-Format                           |
+| T02      | Übertragung leerer optionaler Datumsfelder als `null`                                       |
+| T03      | Wechsel von Person zu Firma einschließlich Bereinigung personenbezogener Angaben            |
+| T04      | Übertragung der voreingestellten Lookup-IDs als numerische Werte                            |
+| T05      | Verhinderung der Speicherung bei einem ungültigen Datum                                     |
+| T06      | Nachträgliches Leeren von Datumsfeldern und korrekte Übertragung nach Registerkartenwechsel |
+
+Die Tests prüfen den tatsächlich an die API-Funktion übergebenen Request-Payload. Sie verwenden keine reale Backend- oder Datenbankverbindung.
+
+Ergänzend wurden praktische Funktionsprüfungen mit dem lokalen Frontend gegen das DEV-Backend durchgeführt. Diese umfassten die Mitgliedsneuanlage, die Bearbeitung bestehender Stammdaten per AutoSave und die Kontrolle der gespeicherten Datumswerte in der DEV-Datenbank.
+
 ```bash
 npm run test:run
 npm run lint
 npm run build
 ```
 
-**Letzter bestätigter vollständiger Frontend-Testlauf (24.11.2026): 14 Testdateien, 112 Tests bestanden, 0 fehlgeschlagen.** Dies ist ein dokumentiertes Prüfergebnis und keine dauerhaft garantierte Testanzahl. Für neue Funktionen sind geeignete Tests der fachlichen Logik und, soweit erforderlich, der API-Interaktion und Dialogzustände zu ergänzen.
+**Letzter bestätigter vollständiger Frontend-Testlauf (24.11.2026): 15 Testdateien, 118 Tests bestanden, 0 fehlgeschlagen.**
+
+Dies ist ein dokumentiertes Prüfergebnis und keine dauerhaft garantierte Testanzahl. Für neue Funktionen sind geeignete Tests der fachlichen Logik und, soweit erforderlich, der API-Interaktion und Dialogzustände zu ergänzen.
 
 ## 13. Entwicklungsworkflow und Versionierung
 
@@ -210,9 +300,12 @@ Aktueller Kontext:
 
 - Aktuelle Paketversion: `1.3.0-SNAPSHOT`.
 - BL-009 Ehrungen einschließlich der nachträglichen Layoutanpassung ist vollständig in `master` enthalten.
-- BUG-004 ist ebenfalls Bestandteil dieses Entwicklungsstands.
-- Die fachliche Abnahme und die automatisierten Frontend-Tests sind erfolgreich abgeschlossen.
-- Die kontrollierte Bereitstellung auf DEV und PROD steht noch aus.
+- Die ursprüngliche Umsetzung von BUG-004 ist ebenfalls Bestandteil dieses Entwicklungsstands.
+- BL-009 und die ursprüngliche Umsetzung von BUG-004 wurden in DEV bereitgestellt.
+- Bei der anschließenden DEV-Prüfung von BUG-004 wurde ein Fehler bei der Übertragung von Datumswerten während der Mitgliedsneuanlage festgestellt.
+- Die Nachbesserung zu BUG-004 wurde lokal implementiert und durch automatisierte Tests sowie praktische Funktionsprüfungen gegen das DEV-Backend abgesichert.
+- Die erneute Bereitstellung des Frontends in DEV und der Abschluss der DEV-Abnahme zu BUG-004 stehen noch aus.
+- Die Bereitstellung von BL-009 und BUG-004 in PROD steht noch aus.
 
 ## 14. Docker und Betrieb
 
@@ -271,15 +364,16 @@ Aus der Schemaangleichung ergibt sich nach erfolgter Prüfung kein erforderliche
 
 Die Implementierung und die lokale fachliche Abnahme einschließlich der nachträglichen Layoutanpassung sind abgeschlossen. Sämtliche Frontend-Änderungen zu BL-009 sind in `master` enthalten.
 
+Die kontrollierte Bereitstellung und Funktionsprüfung von BL-009 in DEV erfolgten am 24.11.2026 erfolgreich.
+
 Noch ausstehend sind:
 
-- Kontrollierte Bereitstellung und Funktionsprüfung in DEV.
 - Praktische Erprobung der vorbereiteten SQL-Änderungs- und Rückfallskripte.
 - Angleichung des PROD-Datenbankschemas nach gesonderter Freigabe.
 - Kontrollierte Bereitstellung und Funktionsprüfung in PROD.
-- Aktualisierung der Versions- und Änderungsdokumentation entsprechend dem tatsächlichen Bereitstellungsstand.
+- Fortschreibung der Versions- und Änderungsdokumentation entsprechend dem tatsächlichen Bereitstellungsstand.
 
-Details und Abnahmeergebnisse stehen im `BL-009-ehrungen-Ergebnisdokument-v0.2.md` in **EMC-DOKUMENTATION**.
+Details und Abnahmeergebnisse stehen in den Ergebnisdokumenten zu BL-009 in EMC-DOKUMENTATION.
 
 BL-010 Funktionen und BL-011 Verteiler sind **nicht** Teil der BL-009-Implementierung. Gemeinsame UI-Bausteine können später wiederverwendet werden, die fachlichen Regeln bleiben getrennt; insbesondere darf die Eindeutigkeitsregel für Ehrungen nicht auf Funktionen übertragen werden.
 

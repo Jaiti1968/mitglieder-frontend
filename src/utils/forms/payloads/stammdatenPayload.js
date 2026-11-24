@@ -10,10 +10,10 @@ export function createStammdatenPayload(values) {
     vorname: values?.vorname ?? "",
     nachname: values?.nachname ?? "",
     geburtsdatum: values?.personFirma
-      ? ""
+      ? null
       : values?.geburtsdatum
         ? parseGermanDateToIso(values.geburtsdatum)
-        : "",
+        : null,
     plz: values?.plz ?? "",
     ort: values?.ort ?? "",
     strasseHausNr: values?.strasseHausNr ?? "",

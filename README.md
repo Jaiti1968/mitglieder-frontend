@@ -2,9 +2,9 @@
 
 **Stand der Dokumentation:** 24.11.2026
 
-**Grundlage:** geprüfte Codebasis einschließlich BL-009 Ehrungen und der nachträglichen Layoutanpassung mit erfolgreichen Tests vom 24.11.2026
+**Grundlage:** geprüfte Codebasis einschließlich BL-009 Ehrungen, der nachträglichen Layoutanpassung sowie BUG-004 einschließlich der Nachbesserung zur Payload-Erzeugung bei der Mitgliedsneuanlage
 
-**Version laut letztem Testlauf (`npm run test:run`):** `1.3.0-SNAPSHOT`
+**Version laut letztem Testlauf:** `1.3.0-SNAPSHOT`
 
 ## Zweck und Projektstand
 
@@ -15,12 +15,19 @@ Im vorliegenden Code umgesetzt:
 - Anmeldung und Abmeldung mit serverseitiger Session sowie Wiederherstellung der Anmeldung beim Start
 - Mitgliederliste mit Suche, Filtern und Seitennavigation
 - Mitgliedsneuanlage und Mitgliederdetailansicht mit den Bereichen Stammdaten, Kontakt, Mitgliedschaft, Datenschutz, Chorkleidung und Ehrungen
+- Registerkartenübergreifende Formularvalidierung und Zustandsübertragung bei der Mitgliedsneuanlage sowie gemeinsame Payload-Erzeugung für Neuanlage und bestehende Mitgliedsformulare (BUG-004)
 - Automatisches Speichern in den vorhandenen Detailformularen; bei Ehrungen ausdrücklich bestätigte Neuanlage und AutoSave beim Bearbeiten
 - Rollenabhängige Bedienung (`ADMIN`, `EDITOR`, `VIEWER`) und administrative Benutzerverwaltung
 - Reporting: Mitgliederverzeichnis mit PDF- und Excel-Export sowie Geburtstagsliste mit PDF-Export
 - Kennzeichnung der Laufzeitumgebung und Dialog mit technischen Systeminformationen
 
-**Abgrenzung:** BL-009 Ehrungen ist im Frontend und Backend vollständig implementiert, fachlich abgenommen und einschließlich der nachträglichen Layoutanpassung in den jeweiligen Master-Stand übernommen. Das kontrollierte Deployment nach DEV und PROD steht noch aus. BL-010 Funktionen und BL-011 Verteiler sind nicht Bestandteil dieses Stands. Die Pflege der Ehrungsarten selbst erfolgt weiterhin außerhalb der Weboberfläche. Weitere geplante Funktionen sind in EMC-DOKUMENTATION beschrieben.
+**Abgrenzung:** BL-009 Ehrungen ist im Frontend und Backend vollständig implementiert, fachlich abgenommen und einschließlich der nachträglichen Layoutanpassung in den jeweiligen Master-Stand übernommen. Die Bereitstellung und Funktionsprüfung in DEV sind erfolgt.
+
+Bei der anschließenden DEV-Prüfung von BUG-004 wurde ein Fehler bei der Übertragung von Datumswerten während der Mitgliedsneuanlage festgestellt. Die Nachbesserung wurde lokal implementiert und erfolgreich gegen das DEV-Backend geprüft. Die erneute Bereitstellung des Frontends in DEV steht noch aus.
+
+Die Bereitstellung von BL-009 und BUG-004 in PROD ist noch nicht erfolgt.
+
+BL-010 Funktionen und BL-011 Verteiler sind nicht Bestandteil dieses Stands. Die Pflege der Ehrungsarten selbst erfolgt weiterhin außerhalb der Weboberfläche. Weitere geplante Funktionen sind in EMC-DOKUMENTATION beschrieben.
 
 ## Technologie
 
@@ -54,7 +61,11 @@ npm run build      # Produktions-Build in dist/
 npm run preview    # Lokale Vorschau des Builds
 ```
 
-Maßgeblich ist der jeweils aktuelle Testlauf. Am 24.11.2026 bestanden 112 Frontend-Tests in 14 Testdateien. Neben Formularvalidierung und Hilfsfunktionen werden für BL-009 auch Ehrungs-Payloads, Dialogverhalten, AutoSave, Löschfehler, die Kennzeichnung zukünftiger Termine sowie die bedingte Anzeige der Spaltenüberschriften geprüft.
+Maßgeblich ist der jeweils aktuelle Testlauf. Am 24.11.2026 bestanden 118 Frontend-Tests in 15 Testdateien.
+
+Neben Formularvalidierung und Hilfsfunktionen werden für BL-009 auch Ehrungs-Payloads, Dialogverhalten, AutoSave, Löschfehler, die Kennzeichnung zukünftiger Termine sowie die bedingte Anzeige der Spaltenüberschriften geprüft.
+
+Für BUG-004 wurden zusätzlich Komponententests zur Mitgliedsneuanlage ergänzt. Diese prüfen insbesondere die Übertragung von Datumswerten im ISO-Format, die Verwendung von `null` bei leeren Datumsfeldern, den Wechsel zwischen Person und Firma, die Übertragung numerischer Lookup-IDs und das Speicherverhalten bei ungültigen oder nachträglich geleerten Eingaben.
 
 **Hinweis:** Konfigurationswerte, Protokolle und Konsolenausgaben können Zugangsdaten enthalten. Solche Informationen vor einer Weitergabe schwärzen.
 
@@ -75,6 +86,20 @@ Die wichtigsten Routen sind:
 Die Geburtstagsliste wird innerhalb von `/reporting` ausgewählt; für sie ist in `AppRoutes.jsx` keine eigene Route definiert.
 
 Die Anwendung kennt die Rollen `ADMIN`, `EDITOR` und `VIEWER`. Die Mitgliederbearbeitung ist für `ADMIN` und `EDITOR` vorgesehen; `VIEWER` erhält eine lesende Oberfläche. Benutzerverwaltung und Reporting-Navigation werden nur für `ADMIN` angeboten. Die verbindliche Berechtigungsprüfung erfolgt im Backend, nicht allein über ausgeblendete Bedienelemente.
+
+## Mitgliedsneuanlage und Formularvalidierung (BUG-004)
+
+Die Mitgliedsneuanlage erfolgt über die Registerkarten Stammdaten, Kontakt und Mitgliedschaft. Eingaben bleiben beim Wechsel zwischen den Registerkarten erhalten. Dies gilt auch für nachträglich geleerte Felder.
+
+Die Schaltfläche „Speichern“ ist nur verfügbar, wenn alle relevanten Formularbereiche gültig sind. Bei ungültigen Eingaben informiert ein Hinweis an der deaktivierten Schaltfläche über die betroffenen Registerkarten und Felder.
+
+Die Neuanlage erfolgt ausschließlich durch ausdrückliches Speichern. Die bestehende AutoSave-Funktion bei der Bearbeitung bereits vorhandener Mitglieder bleibt erhalten.
+
+Für die Übertragung der Stammdaten, Kontaktdaten und Mitgliedschaftsdaten an das Backend werden bei Neuanlage und Bearbeitung dieselben jeweiligen Payload-Funktionen verwendet.
+
+Datumswerte werden in der Oberfläche im Format `TT.MM.JJJJ` erfasst und vor der Übertragung in das ISO-Format `YYYY-MM-DD` umgewandelt. Nicht belegte optionale Datumsfelder werden als `null` übertragen.
+
+Die detaillierten technischen Konventionen sind in `README_DEVELOPER.md` beschrieben. Die fachlichen Regeln und Prüfergebnisse zu BUG-004 werden in EMC-DOKUMENTATION geführt.
 
 ## Ehrungen (BL-009)
 
@@ -162,4 +187,4 @@ Vor einem Release ist insbesondere zu prüfen, ob die Version in `package.json` 
 - **EMC-DOKUMENTATION** – übergreifende Projekt- und Funktionsdokumentation
 - **EMC-INFRA** – verbindliche Infrastruktur- und Betriebsdokumentation
 
-Diese README dokumentiert den **lokal implementierten und geprüften Stand** einschließlich BL-009. Noch nicht umgesetzte Funktionen werden erst nach ihrer tatsächlichen Integration als vorhanden aufgeführt.
+Diese README dokumentiert den lokal implementierten und geprüften Entwicklungsstand einschließlich BL-009 und BUG-004. Der tatsächliche Bereitstellungsstand in DEV und PROD wird gesondert in der Projekt- und Betriebsdokumentation geführt. Noch nicht umgesetzte Funktionen werden erst nach ihrer tatsächlichen Integration als vorhanden aufgeführt.
